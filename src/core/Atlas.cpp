@@ -7,69 +7,68 @@
 #include "utils/Misc.hpp"
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-  ((std::string *)userp)->append((char *)contents, size * nmemb);
+  ((std::string *) userp)->append((char *) contents, size * nmemb);
   return size * nmemb;
 }
 
-Atlas::Atlas(const fs::path &install, const fs::path &cache, bool verbose)
-  : installDir(fs::path(getenv("HOME")) / ".local/share/atlas"),
-    cacheDir(fs::path(getenv("HOME")) / ".cache/atlas"),
-    shortcutDir(getDefaultShortcutDir()),
-    repoConfigPath(installDir / "repositories.json"),
-    logDir(installDir / "logs"), verbose(verbose) {
-
-  fs::create_directories(installDir);
-  fs::create_directories(cacheDir);
-  fs::create_directories(shortcutDir);
-  fs::create_directories(logDir);
+Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose)
+  : m_install_dir(fs::path(getenv("HOME")) / ".local/share/atlas"),
+    m_cache_dir(fs::path(getenv("HOME")) / ".cache/atlas"),
+    m_shortcut_dir(getDefaultShortcutDir()),
+    m_repo_config_path(m_install_dir / "repositories.json"),
+    m_log_dir(m_install_dir / "logs"), verbose(a_verbose) {
+  fs::create_directories(m_install_dir);
+  fs::create_directories(m_cache_dir);
+  fs::create_directories(m_shortcut_dir);
+  fs::create_directories(m_log_dir);
   loadRepositories();
   loadPackageIndex();
 }
 
-bool Atlas::addRepository(const std::string &name, const std::string &url, const std::string &branch) {
-  if (repositories.find(name) != repositories.end()) {
+bool Atlas::AddRepository(const std::string &a_name, const std::string &a_url, const std::string &a_branch) {
+  if (m_repositories.find(a_name) != m_repositories.end()) {
     std::cerr << "Repository already exists\n";
     return false;
   }
 
-  Repository repo{name, url, branch, true};
-  repositories[name] = repo;
+  Repository repo{a_name, a_url, a_branch, true};
+  m_repositories[a_name] = repo;
   saveRepositories();
   return fetchRepository(repo);
 }
 
-bool Atlas::removeRepository(const std::string &name) {
-  if (repositories.find(name) == repositories.end()) {
+bool Atlas::RemoveRepository(const std::string &a_name) {
+  if (m_repositories.find(a_name) == m_repositories.end()) {
     std::cerr << "Repository not found\n";
     return false;
   }
-  repositories.erase(name);
-  fs::remove_all(cacheDir / name);
+  m_repositories.erase(a_name);
+  fs::remove_all(m_cache_dir / a_name);
   saveRepositories();
   loadPackageIndex();
   return true;
 }
 
-bool Atlas::enableRepository(const std::string &name) {
-  if (repositories.find(name) == repositories.end())
+bool Atlas::EnableRepository(const std::string &a_name) {
+  if (m_repositories.find(a_name) == m_repositories.end())
     return false;
-  repositories[name].enabled = true;
+  m_repositories[a_name].enabled = true;
   saveRepositories();
   loadPackageIndex();
   return true;
 }
 
-bool Atlas::disableRepository(const std::string &name) {
-  if (repositories.find(name) == repositories.end())
+bool Atlas::DisableRepository(const std::string &a_name) {
+  if (m_repositories.find(a_name) == m_repositories.end())
     return false;
-  repositories[name].enabled = false;
+  m_repositories[a_name].enabled = false;
   saveRepositories();
   loadPackageIndex();
   return true;
 }
 
-void Atlas::listRepositories() {
-  for (const auto &[name, repo] : repositories) {
+void Atlas::ListRepositories() {
+  for (const auto &[name, repo]: m_repositories) {
     std::cout << name << " (" << (repo.enabled ? "enabled" : "disabled")
         << ")\n"
         << "  URL: " << repo.url << "\n"
@@ -77,13 +76,13 @@ void Atlas::listRepositories() {
   }
 }
 
-bool Atlas::fetch() {
+bool Atlas::Fetch() {
   bool success = true;
   LoadingAnimation loadingAnimation("Fetching repositories");
-  fs::path tempDir = cacheDir / "temp";
+  fs::path tempDir = m_cache_dir / "temp";
   fs::create_directories(tempDir);
 
-  for (const auto &[name, repo] : repositories) {
+  for (const auto &[name, repo]: m_repositories) {
     if (!repo.enabled)
       continue;
 
@@ -94,27 +93,29 @@ bool Atlas::fetch() {
       continue;
     }
 
-    fs::path repoPath = cacheDir / name;
+    fs::path repoPath = m_cache_dir / name;
     if (fs::exists(repoPath / "packages.json")) {
       try {
         Json::Value root;
         std::ifstream index_file(repoPath / "packages.json");
         index_file >> root;
 
-        for (const auto &package : root["packages"]) {
-          PackageConfig config{package["name"].asString(),
+        for (const auto &package: root["packages"]) {
+          PackageConfig config{
+            package["name"].asString(),
             package["version"].asString(),
             package["description"].asString(),
             package["build_command"].asString(),
             package["install_command"].asString(),
             package["uninstall_command"].asString(),
-            name};
+            name
+          };
 
           const Json::Value &deps = package["dependencies"];
-          for (const auto &dep : deps) {
+          for (const auto &dep: deps) {
             config.dependencies.push_back(dep.asString());
           }
-          packageIndex[config.name] = config;
+          m_package_index[config.name] = config;
         }
       } catch (const std::exception &e) {
         std::cerr << "Error parsing package index for " << name << ": "
@@ -125,21 +126,21 @@ bool Atlas::fetch() {
   }
 
   fs::remove_all(tempDir);
-  loadingAnimation.stop();
+  loadingAnimation.Stop();
   return success;
 }
 
-bool Atlas::install(const std::string &packageName) {
-  if (packageIndex.find(packageName) == packageIndex.end()) {
+bool Atlas::Install(const std::string &a_package_name) {
+  if (m_package_index.find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return false;
   }
-  return installPackage(packageIndex[packageName]);
+  return installPackage(m_package_index[a_package_name]);
 }
 
-bool Atlas::update() {
+bool Atlas::Update() {
   bool success = true;
-  fs::path dbPath = installDir / "installed.json";
+  fs::path dbPath = m_install_dir / "installed.json";
   Json::Value root;
 
   if (fs::exists(dbPath)) {
@@ -149,8 +150,8 @@ bool Atlas::update() {
 
   bool installedSomething = false;
 
-  for (const auto &[name, config] : packageIndex) {
-    if (isInstalled(name)) {
+  for (const auto &[name, config]: m_package_index) {
+    if (IsInstalled(name)) {
       std::string localVersion = root[name]["version"].asString();
       if (config.version != localVersion) {
         installedSomething = true;
@@ -168,42 +169,42 @@ bool Atlas::update() {
   return success;
 }
 
-bool Atlas::remove(const std::string &packageName) {
-  if (packageIndex.find(packageName) == packageIndex.end()) {
+bool Atlas::Remove(const std::string &a_package_name) {
+  if (m_package_index.find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return false;
   }
-  return removePackage(packageIndex[packageName]);
+  return removePackage(m_package_index[a_package_name]);
 }
 
-std::vector<std::string> Atlas::search(const std::string &query) {
+std::vector<std::string> Atlas::Search(const std::string &a_query) {
   std::vector<std::string> results;
-  for (const auto &[name, config] : packageIndex) {
-    if (name.find(query) != std::string::npos ||
-        config.description.find(query) != std::string::npos) {
+  for (const auto &[name, config]: m_package_index) {
+    if (name.find(a_query) != std::string::npos ||
+        config.description.find(a_query) != std::string::npos) {
       results.push_back(name);
     }
   }
   return results;
 }
 
-void Atlas::info(const std::string &packageName) {
-  if (packageIndex.find(packageName) == packageIndex.end()) {
+void Atlas::Info(const std::string &a_package_name) {
+  if (m_package_index.find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return;
   }
 
-  const auto &config = packageIndex[packageName];
+  const auto &config = m_package_index[a_package_name];
   std::cout << "Name: " << config.name << "\n"
       << "Version: " << config.version << "\n"
       << "Description: " << config.description << "\n"
-      << "Status: " << (isInstalled(packageName) ? GREEN : RED)
-      << (isInstalled(packageName) ? "Installed" : "Not installed")
+      << "Status: " << (IsInstalled(a_package_name) ? GREEN : RED)
+      << (IsInstalled(a_package_name) ? "Installed" : "Not installed")
       << "\n";
 }
 
-bool Atlas::isInstalled(const std::string &packageName) const {
-  fs::path dbPath = installDir / "installed.json";
+bool Atlas::IsInstalled(const std::string &a_package_name) const {
+  fs::path dbPath = m_install_dir / "installed.json";
   if (!fs::exists(dbPath)) {
     return false;
   }
@@ -212,22 +213,24 @@ bool Atlas::isInstalled(const std::string &packageName) const {
   std::ifstream dbFile(dbPath);
   dbFile >> root;
 
-  return root.isMember(packageName);
+  return root.isMember(a_package_name);
 }
 
 void Atlas::loadRepositories() {
-  if (!fs::exists(repoConfigPath)) {
+  if (!fs::exists(m_repo_config_path)) {
     return;
   }
 
   Json::Value root;
-  std::ifstream config_file(repoConfigPath);
+  std::ifstream config_file(m_repo_config_path);
   config_file >> root;
 
-  for (const auto &repo : root["repositories"]) {
-    Repository r{repo["name"].asString(), repo["url"].asString(),
-      repo["branch"].asString(), repo["enabled"].asBool()};
-    repositories[r.name] = r;
+  for (const auto &repo: root["repositories"]) {
+    Repository r{
+      repo["name"].asString(), repo["url"].asString(),
+      repo["branch"].asString(), repo["enabled"].asBool()
+    };
+    m_repositories[r.name] = r;
   }
 }
 
@@ -235,7 +238,7 @@ void Atlas::saveRepositories() {
   Json::Value root;
   Json::Value repoArray(Json::arrayValue);
 
-  for (const auto &[name, repo] : repositories) {
+  for (const auto &[name, repo]: m_repositories) {
     Json::Value repoObj;
     repoObj["name"] = repo.name;
     repoObj["url"] = repo.url;
@@ -245,39 +248,41 @@ void Atlas::saveRepositories() {
   }
   root["repositories"] = repoArray;
 
-  std::ofstream config_file(repoConfigPath);
+  std::ofstream config_file(m_repo_config_path);
   config_file << root;
 }
 
 void Atlas::loadPackageIndex() {
-  packageIndex.clear();
-  for (const auto &[name, repo] : repositories) {
+  m_package_index.clear();
+  for (const auto &[name, repo]: m_repositories) {
     if (!repo.enabled)
       continue;
 
-    fs::path repoPath = cacheDir / name;
-    for (const auto &entry : fs::recursive_directory_iterator(repoPath)) {
+    fs::path repoPath = m_cache_dir / name;
+    for (const auto &entry: fs::recursive_directory_iterator(repoPath)) {
       if (entry.path().filename() == "package.json") {
         Json::Value root;
         std::ifstream config_file(entry.path());
         config_file >> root;
 
-        PackageConfig config{root["name"].asString(),
+        PackageConfig config{
+          root["name"].asString(),
           root["version"].asString(),
           root["description"].asString(),
           root["build_command"].asString(),
           root["install_command"].asString(),
           root["uninstall_command"].asString(),
-          name};
-        packageIndex[config.name] = config;
+          name
+        };
+        m_package_index[config.name] = config;
       }
     }
   }
 }
 
-bool Atlas::fetchRepository(const Repository &repo) const {
-  fs::path repoPath = cacheDir / repo.name;
-  fs::path zipPath = cacheDir / (repo.name + ".zip");
+bool Atlas::fetchRepository(const Repository &a_repo) const {
+  fs::path repoPath = m_cache_dir / a_repo.name;
+  fs::path zipPath = m_cache_dir / (a_repo.name + ".zip");
 
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -286,7 +291,7 @@ bool Atlas::fetchRepository(const Repository &repo) const {
   }
 
   std::string url =
-      "https://api.github.com/repos/" + repo.url + "/zipball/" + repo.branch;
+      "https://api.github.com/repos/" + a_repo.url + "/zipball/" + a_repo.branch;
   FILE *fp = fopen(zipPath.string().c_str(), "wb");
   if (!fp) {
     curl_easy_cleanup(curl);
@@ -322,7 +327,7 @@ bool Atlas::fetchRepository(const Repository &repo) const {
   std::string cmd =
       "unzip -o " + zipPath.string() + " -d " + repoPath.string();
   int extract_result =
-      processCommand(cmd, logDir.string() + "/latest.log", verbose);
+      ProcessCommand(cmd, m_log_dir.string() + "/latest.log", verbose);
   fs::remove(zipPath);
 
   if (extract_result != 0) {
@@ -331,7 +336,7 @@ bool Atlas::fetchRepository(const Repository &repo) const {
   }
 
   fs::path nested_dir;
-  for (const auto &entry : fs::directory_iterator(repoPath)) {
+  for (const auto &entry: fs::directory_iterator(repoPath)) {
     if (fs::is_directory(entry)) {
       nested_dir = entry.path();
       break;
@@ -339,7 +344,7 @@ bool Atlas::fetchRepository(const Repository &repo) const {
   }
 
   if (!nested_dir.empty()) {
-    for (const auto &entry : fs::directory_iterator(nested_dir)) {
+    for (const auto &entry: fs::directory_iterator(nested_dir)) {
       fs::rename(entry.path(), repoPath / entry.path().filename());
     }
     fs::remove_all(nested_dir);
@@ -348,29 +353,29 @@ bool Atlas::fetchRepository(const Repository &repo) const {
   return true;
 }
 
-bool Atlas::installPackage(const PackageConfig &config) {
-  PackageInstaller installer(cacheDir, installDir, logDir, config);
+bool Atlas::installPackage(const PackageConfig &a_config) {
+  PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
-  LoadingAnimation loading("Installing " + config.name);
+  LoadingAnimation loading("Installing " + a_config.name);
 
-  bool success = installer.download() && installer.prepare() &&
-                 installer.build() && installer.install() &&
-                 installer.cleanup();
+  bool success = installer.Download() && installer.Prepare() &&
+                 installer.Build() && installer.Install() &&
+                 installer.Cleanup();
 
-  loading.stop();
+  loading.Stop();
 
   if (!success) {
-    std::cerr << "Installation failed for " + config.name + "\n";
+    std::cerr << "Installation failed for " + a_config.name + "\n";
     return false;
   }
 
-  recordInstallation(config);
+  recordInstallation(a_config);
   return true;
 }
 
-void Atlas::recordInstallation(const PackageConfig &config) {
+void Atlas::recordInstallation(const PackageConfig &a_config) {
   Json::Value root;
-  fs::path db_path = installDir / "installed.json";
+  fs::path db_path = m_install_dir / "installed.json";
 
   if (fs::exists(db_path)) {
     std::ifstream db_file(db_path);
@@ -378,26 +383,26 @@ void Atlas::recordInstallation(const PackageConfig &config) {
   }
 
   Json::Value package;
-  package["version"] = config.version;
+  package["version"] = a_config.version;
   package["install_date"] = getCurrentDateTime();
-  package["repository"] = config.repository;
+  package["repository"] = a_config.repository;
 
-  root[config.name] = package;
+  root[a_config.name] = package;
 
   std::ofstream db_file(db_path);
   db_file << root;
 }
 
-void Atlas::recordRemoval(const PackageConfig &config) {
+void Atlas::recordRemoval(const PackageConfig &a_config) {
   Json::Value root;
-  fs::path db_path = installDir / "installed.json";
+  fs::path db_path = m_install_dir / "installed.json";
 
   if (fs::exists(db_path)) {
     std::ifstream db_file(db_path);
     db_file >> root;
   }
 
-  root.removeMember(config.name);
+  root.removeMember(a_config.name);
 
   std::ofstream db_file(db_path);
   db_file << root;
@@ -411,21 +416,21 @@ std::string Atlas::getCurrentDateTime() {
   return datetime;
 }
 
-bool Atlas::removePackage(const PackageConfig &config) {
-  PackageInstaller installer(cacheDir, installDir, logDir, config);
+bool Atlas::removePackage(const PackageConfig &a_config) {
+  PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
-  LoadingAnimation loading("Removing " + config.name);
+  LoadingAnimation loading("Removing " + a_config.name);
 
-  bool success = installer.uninstall();
+  bool success = installer.Uninstall();
 
-  loading.stop();
+  loading.Stop();
 
   if (!success) {
-    std::cerr << "Removal failed for " + config.name + "\n";
+    std::cerr << "Removal failed for " + a_config.name + "\n";
     return false;
   }
 
-  recordRemoval(config);
+  recordRemoval(a_config);
 
   return true;
 }
@@ -440,20 +445,21 @@ bool Atlas::isMacOS() {
 
 fs::path Atlas::getDefaultShortcutDir() {
   fs::path homeDir = getenv("HOME");
-  return isMacOS() ? homeDir / "Applications"
+  return isMacOS()
+           ? homeDir / "Applications"
            : homeDir / ".local/share/applications";
 }
 
-void Atlas::createShortcut(const std::string &repo) {
+void Atlas::createShortcut(const std::string &a_repo) {
   if (isMacOS()) {
-    createMacOSShortcut(repo);
+    createMacOSShortcut(a_repo);
   } else {
-    createLinuxShortcut(repo);
+    createLinuxShortcut(a_repo);
   }
 }
 
-void Atlas::createMacOSShortcut(const std::string &repo) {
-  fs::path appPath = shortcutDir / (repo + ".app");
+void Atlas::createMacOSShortcut(const std::string &a_repo) {
+  fs::path appPath = m_shortcut_dir / (a_repo + ".app");
   fs::create_directories(appPath / "Contents/MacOS");
 
   std::ofstream plist(appPath / "Contents/Info.plist");
@@ -463,11 +469,11 @@ void Atlas::createMacOSShortcut(const std::string &repo) {
       << "<plist version=\"1.0\">\n"
       << "<dict>\n"
       << "    <key>CFBundleExecutable</key>\n"
-      << "    <string>" << repo << "</string>\n"
+      << "    <string>" << a_repo << "</string>\n"
       << "    <key>CFBundleIdentifier</key>\n"
-      << "    <string>com.atlas." << repo << "</string>\n"
+      << "    <string>com.atlas." << a_repo << "</string>\n"
       << "    <key>CFBundleName</key>\n"
-      << "    <string>" << repo << "</string>\n"
+      << "    <string>" << a_repo << "</string>\n"
       << "    <key>CFBundlePackageType</key>\n"
       << "    <string>APPL</string>\n"
       << "    <key>CFBundleShortVersionString</key>\n"
@@ -476,17 +482,17 @@ void Atlas::createMacOSShortcut(const std::string &repo) {
       << "</plist>";
   plist.close();
 
-  fs::create_symlink(installDir / repo / "main",
-                     appPath / "Contents/MacOS" / repo);
+  fs::create_symlink(m_install_dir / a_repo / "main",
+                     appPath / "Contents/MacOS" / a_repo);
 }
 
-void Atlas::createLinuxShortcut(const std::string &repo) {
-  fs::path shortcutPath = shortcutDir / (repo + ".desktop");
+void Atlas::createLinuxShortcut(const std::string &a_repo) {
+  fs::path shortcutPath = m_shortcut_dir / (a_repo + ".desktop");
   std::ofstream shortcut(shortcutPath);
 
   shortcut << "[Desktop Entry]\n"
-      << "Name=" << repo << "\n"
-      << "Exec=" << (installDir / repo / "main").string() << "\n"
+      << "Name=" << a_repo << "\n"
+      << "Exec=" << (m_install_dir / a_repo / "main").string() << "\n"
       << "Type=Application\n"
       << "Terminal=false\n";
 
@@ -495,11 +501,11 @@ void Atlas::createLinuxShortcut(const std::string &repo) {
                                 fs::perms::others_read);
 }
 
-bool Atlas::downloadRepository(const std::string &username, const std::string &repo) const {
+bool Atlas::downloadRepository(const std::string &a_username, const std::string &a_repo) const {
   CURL *curl = curl_easy_init();
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo +
+  std::string url = "https://api.github.com/repos/" + a_username + "/" + a_repo +
                     "/zipball/master";
-  std::string zipPath = (cacheDir / (repo + ".zip")).string();
+  std::string zipPath = (m_cache_dir / (a_repo + ".zip")).string();
 
   if (!curl)
     return false;
@@ -523,9 +529,9 @@ bool Atlas::downloadRepository(const std::string &username, const std::string &r
   return res == CURLE_OK;
 }
 
-bool Atlas::extractPackage(const std::string &repo) const {
-  std::string zipPath = (cacheDir / (repo + ".zip")).string();
-  std::string extractPath = (installDir / repo).string();
+bool Atlas::extractPackage(const std::string &a_repo) const {
+  std::string zipPath = (m_cache_dir / (a_repo + ".zip")).string();
+  std::string extractPath = (m_install_dir / a_repo).string();
   std::string cmd = "unzip -o " + zipPath + " -d " + extractPath;
   return system(cmd.c_str()) == 0;
 }

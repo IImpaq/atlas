@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     PackageParser parser(std::string("https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=") + argv[2]);
-    json result = parser.parse();
+    json result = parser.Parse();
     std::cout << result.dump(2) << std::endl;
     return 0;
   }
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
                 << RESET;
       return 1;
     }
-    return pm.addRepository(argv[2], argv[3]) ? 0 : 1;
+    return pm.AddRepository(argv[2], argv[3]) ? 0 : 1;
   }
 
   if (command == "repo-remove") {
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
                 << RESET;
       return 1;
     }
-    return pm.removeRepository(argv[2]) ? 0 : 1;
+    return pm.RemoveRepository(argv[2]) ? 0 : 1;
   }
 
   if (command == "repo-enable") {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                 << RESET;
       return 1;
     }
-    return pm.enableRepository(argv[2]) ? 0 : 1;
+    return pm.EnableRepository(argv[2]) ? 0 : 1;
   }
 
   if (command == "repo-disable") {
@@ -97,16 +97,16 @@ int main(int argc, char *argv[]) {
                 << RESET;
       return 1;
     }
-    return pm.disableRepository(argv[2]) ? 0 : 1;
+    return pm.DisableRepository(argv[2]) ? 0 : 1;
   }
 
   if (command == "repo-list") {
-    pm.listRepositories();
+    pm.ListRepositories();
     return 0;
   }
 
   if (command == "fetch") {
-    return pm.fetch() ? 0 : 1;
+    return pm.Fetch() ? 0 : 1;
   }
 
   if (command == "install") {
@@ -114,11 +114,11 @@ int main(int argc, char *argv[]) {
       std::cout << RED << "Error: install requires package name\n" << RESET;
       return 1;
     }
-    return pm.install(argv[2]) ? 0 : 1;
+    return pm.Install(argv[2]) ? 0 : 1;
   }
 
   if (command == "update") {
-    return pm.update() ? 0 : 1;
+    return pm.Update() ? 0 : 1;
   }
 
   if (command == "remove") {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
       std::cout << RED << "Error: remove requires package name\n" << RESET;
       return 1;
     }
-    return pm.remove(argv[2]) ? 0 : 1;
+    return pm.Remove(argv[2]) ? 0 : 1;
   }
 
   if (command == "search") {
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
       std::cout << RED << "Error: search requires a query argument\n" << RESET;
       return 1;
     }
-    for (const auto &result : pm.search(argv[2]))
+    for (const auto &result : pm.Search(argv[2]))
       std::cout << result << "\n";
     return 0;
   }
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
       std::cout << RED << "Error: info requires package name\n" << RESET;
       return 1;
     }
-    pm.info(argv[2]);
+    pm.Info(argv[2]);
     return 0;
   }
 

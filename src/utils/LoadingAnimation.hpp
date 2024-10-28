@@ -11,16 +11,16 @@
 
 class LoadingAnimation {
 private:
-    bool running;
-    std::thread animator;
-    std::string message;
-    const std::vector<std::string> frames = {"|", "/", "-", "\\"};
+    bool m_running;
+    std::thread m_animator;
+    std::string m_message;
+    const std::vector<std::string> m_frames = {"|", "/", "-", "\\"};
 
 public:
-    explicit LoadingAnimation(const std::string &msg);
+    explicit LoadingAnimation(const std::string &a_msg);
     ~LoadingAnimation();
 
-    void stop();
+    void Stop();
 
 private:
     void animate() const;

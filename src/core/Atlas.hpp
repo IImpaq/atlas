@@ -24,60 +24,75 @@ namespace fs = std::filesystem;
 
 class Atlas {
 private:
-    bool verbose;
-    fs::path installDir;
-    fs::path cacheDir;
-    fs::path shortcutDir;
-    fs::path repoConfigPath;
-    fs::path logDir;
-    std::unordered_map<std::string, Repository> repositories;
-    std::unordered_map<std::string, PackageConfig> packageIndex;
+  bool verbose;
+  fs::path m_install_dir;
+  fs::path m_cache_dir;
+  fs::path m_shortcut_dir;
+  fs::path m_repo_config_path;
+  fs::path m_log_dir;
+  std::unordered_map<std::string, Repository> m_repositories;
+  std::unordered_map<std::string, PackageConfig> m_package_index;
 
 public:
-  Atlas(const fs::path &install, const fs::path &cache, bool verbose);
+  Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
 
-  bool addRepository(const std::string &name, const std::string &url,
-      const std::string &branch = "main");
-  bool removeRepository(const std::string &name);
-  bool enableRepository(const std::string &name);
-  bool disableRepository(const std::string &name);
-  void listRepositories();
-  bool fetch();
+  bool AddRepository(const std::string &a_name, const std::string &a_url,
+                     const std::string &a_branch = "main");
 
-  bool install(const std::string &packageName);
-  bool update();
-  bool remove(const std::string &packageName);
+  bool RemoveRepository(const std::string &a_name);
 
-  std::vector<std::string> search(const std::string &query);
-  void info(const std::string &packageName);
+  bool EnableRepository(const std::string &a_name);
 
-  bool isInstalled(const std::string &packageName) const;
+  bool DisableRepository(const std::string &a_name);
+
+  void ListRepositories();
+
+  bool Fetch();
+
+  bool Install(const std::string &a_package_name);
+
+  bool Update();
+
+  bool Remove(const std::string &a_package_name);
+
+  std::vector<std::string> Search(const std::string &a_query);
+
+  void Info(const std::string &a_package_name);
+
+  bool IsInstalled(const std::string &a_package_name) const;
 
 private:
   void loadRepositories();
+
   void saveRepositories();
+
   void loadPackageIndex();
 
-  bool fetchRepository(const Repository &repo) const;
-  bool installPackage(const PackageConfig &config);
-  void recordInstallation(const PackageConfig &config);
-  void recordRemoval(const PackageConfig &config);
+  bool fetchRepository(const Repository &a_repo) const;
+
+  bool installPackage(const PackageConfig &a_config);
+
+  void recordInstallation(const PackageConfig &a_config);
+
+  void recordRemoval(const PackageConfig &a_config);
 
   std::string getCurrentDateTime();
 
-  bool removePackage(const PackageConfig &config);
+  bool removePackage(const PackageConfig &a_config);
 
   bool isMacOS();
 
   fs::path getDefaultShortcutDir();
 
-  void createShortcut(const std::string &repo);
-  void createMacOSShortcut(const std::string &repo);
-  void createLinuxShortcut(const std::string &repo);
+  void createShortcut(const std::string &a_repo);
 
-  bool downloadRepository(const std::string &username, const std::string &repo) const;
+  void createMacOSShortcut(const std::string &a_repo);
 
-  bool extractPackage(const std::string &repo) const;
+  void createLinuxShortcut(const std::string &a_repo);
+
+  bool downloadRepository(const std::string &a_username, const std::string &a_repo) const;
+
+  bool extractPackage(const std::string &a_repo) const;
 };
 
 #endif // ATLAS_ATLAS_HPP

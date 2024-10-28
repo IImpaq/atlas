@@ -14,31 +14,31 @@ using json = nlohmann::json;
 
 class PackageParser {
 private:
-    std::string url;
-    std::unordered_map<std::string, std::vector<std::string>> array_variables;
-    std::unordered_map<std::string, std::string> variables;
+    std::string m_url;
+    std::unordered_map<std::string, std::vector<std::string>> m_array_variables;
+    std::unordered_map<std::string, std::string> m_variables;
 
 public:
-    explicit PackageParser(const std::string& url);
+    explicit PackageParser(const std::string& a_url);
 
-    json parse();
+    json Parse();
 
 private:
-    std::string fetch_pkgbuild(const std::string &url);
-    std::string extract_function_content(const std::string& pkgbuild, const std::string& func_name);
-    std::vector<std::string> parse_function_commands(const std::string& content);
+    std::string fetchPkgbuild(const std::string &a_url);
+    std::string extractFunctionContent(const std::string& a_pkgbuild, const std::string& a_func_name);
+    std::vector<std::string> parseFunctionCommands(const std::string& a_content);
     std::string trim(const std::string& str);
-    std::string resolve_variables(const std::string& input);
-    std::vector<std::string> extract_function_body(const std::string& pkgbuild, const std::string& func_name);
+    std::string resolveVariables(const std::string& a_input);
+    std::vector<std::string> extractFunctionBody(const std::string& a_pkgbuild, const std::string& a_func_name);
 
-    void parse_arrays(const std::string& pkgbuild);
-    void parse_variables(const std::string& pkgbuild);
+    void parseArrays(const std::string& a_pkgbuild);
+    void parseVariables(const std::string& a_pkgbuild);
 
-    json create_linux_steps(const std::string& pkgbuild);
-    json create_macos_steps(const json& linux_steps);
+    json createLinuxSteps(const std::string& a_pkgbuild);
+    json createMacosSteps(const json& a_linux_steps);
 
-    json process_json_values(json& j, const std::string& pkg_name, const std::string& pkg_version);
-    json parse_pkgbuild(const std::string& pkgbuild_content);
+    json processJsonValues(json& j, const std::string& a_pkg_name, const std::string& a_pkg_version);
+    json parsePkgbuild(const std::string& a_pkgbuild_content);
 };
 
 #endif // PACKAGE_PARSER_HPP

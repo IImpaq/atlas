@@ -13,28 +13,28 @@ extern const char *GREEN;
 extern const char *YELLOW;
 extern const char *RESET;
 
-static void logOutputToFile(const std::string &output,
-                            const std::string &filename) {
-    std::ofstream file(filename, std::ios::app);
-    file << output;
+static void LogOutputToFile(const std::string &a_output,
+                            const std::string &a_filename) {
+    std::ofstream file(a_filename, std::ios::app);
+    file << a_output;
     file.close();
 }
 
-static int processCommand(const std::string &command, const std::string &path,
-                          bool verbose) {
-    FILE *pipe = popen(command.c_str(), "r");
+static int ProcessCommand(const std::string &a_command, const std::string &a_path,
+                          bool a_verbose) {
+    FILE *pipe = popen(a_command.c_str(), "r");
     std::string output{};
     int exitCode = -1;
     if (pipe) {
         char buffer[128];
         while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-            if (verbose)
+            if (a_verbose)
                 std::cout << "Debug: " << buffer << std::endl;
             output.append(buffer);
         }
         exitCode = pclose(pipe);
     }
-    logOutputToFile(output, path);
+    LogOutputToFile(output, a_path);
     return exitCode;
 }
 
