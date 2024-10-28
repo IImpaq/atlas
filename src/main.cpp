@@ -1,4 +1,9 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+
 #include "core/Atlas.hpp"
+#include "core/PackageParser.hpp"
 
 bool hasVerboseFlag(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
@@ -44,6 +49,17 @@ int main(int argc, char *argv[]) {
 
   if (command == "help") {
     printHelp(argv[0]);
+    return 0;
+  }
+
+  if (command == "parse") {
+    if (argc != 3) {
+      std::cout << RED << "Error: missing package name to parse\n" << RESET;
+      return 1;
+    }
+    PackageParser parser(std::string("https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=") + argv[2]);
+    json result = parser.parse();
+    std::cout << result.dump(2) << std::endl;
     return 0;
   }
 
