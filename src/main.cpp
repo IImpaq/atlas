@@ -4,6 +4,7 @@
 
 #include "core/Atlas.hpp"
 #include "core/PackageParser.hpp"
+#include "utils/Misc.hpp"
 
 bool hasVerboseFlag(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
