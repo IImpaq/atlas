@@ -354,13 +354,27 @@ bool Atlas::fetchRepository(const Repository &a_repo) const {
 }
 
 bool Atlas::installPackage(const PackageConfig &a_config) {
-  PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
+  // First install all dependencies
+  for (const auto& dep : a_config.dependencies) {
+    if (m_package_index.find(dep) == m_package_index.end()) {
+      std::cerr << "Unknown dependency " << dep << "\n";
+      return false;
+    }
 
+    PackageConfig dep_config = m_package_index[dep];
+    if (!installPackage(dep_config)) {
+      std::cerr << "Failed to install dependency: " + dep + "\n";
+      return false;
+    }
+  }
+
+  // Then proceed with the main package installation
+  PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
   LoadingAnimation loading("Installing " + a_config.name);
 
   bool success = installer.Download() && installer.Prepare() &&
-                 installer.Build() && installer.Install() &&
-                 installer.Cleanup();
+                installer.Build() && installer.Install() &&
+                installer.Cleanup();
 
   loading.Stop();
 
@@ -372,6 +386,7 @@ bool Atlas::installPackage(const PackageConfig &a_config) {
   recordInstallation(a_config);
   return true;
 }
+
 
 void Atlas::recordInstallation(const PackageConfig &a_config) {
   Json::Value root;
