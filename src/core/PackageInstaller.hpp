@@ -11,8 +11,8 @@
 #include <json/json.h>
 #include <curl/curl.h>
 
-#include "../utils/Misc.hpp"
-#include "../PackageConfig.hpp"
+#include "utils/Misc.hpp"
+#include "pods/PackageConfig.hpp"
 
 namespace fs = std::filesystem;
 

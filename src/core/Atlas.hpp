@@ -15,8 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "PackageConfig.hpp"
-#include "Repository.hpp"
+#include "pods/PackageConfig.hpp"
+#include "pods/Repository.hpp"
 #include "utils/LoadingAnimation.hpp"
 #include "core/PackageInstaller.hpp"
 
