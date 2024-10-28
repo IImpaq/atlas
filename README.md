@@ -1,7 +1,5 @@
 <h1 align="center">Atlas 🚀</h1>
 
----
-
 A blazingly fast, modern package manager for macOS and Linux written in C++
 
 ## ⚡️ Features
