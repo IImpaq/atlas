@@ -4,6 +4,8 @@
 
 #include "Atlas.hpp"
 
+#include <set>
+
 #include "utils/Misc.hpp"
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -175,6 +177,11 @@ bool Atlas::Remove(const std::string &a_package_name) {
     return false;
   }
   return removePackage(m_package_index[a_package_name]);
+}
+
+void Atlas::Cleanup() {
+  std::cout << "Finding orphaned packages to remove...\n";
+  cleanupPackages();
 }
 
 std::vector<std::string> Atlas::Search(const std::string &a_query) {
@@ -549,4 +556,47 @@ bool Atlas::extractPackage(const std::string &a_repo) const {
   std::string extractPath = (m_install_dir / a_repo).string();
   std::string cmd = "unzip -o " + zipPath + " -d " + extractPath;
   return system(cmd.c_str()) == 0;
+}
+
+void Atlas::cleanupPackages() {
+  // Read installed packages
+  fs::path dbPath = m_install_dir / "installed.json";
+  if (!fs::exists(dbPath)) {
+    return;
+  }
+
+  Json::Value root;
+  std::ifstream dbFile(dbPath);
+  dbFile >> root;
+
+  // Create a set of all dependencies
+  std::set<std::string> allDependencies;
+  for (const auto& packageName : root.getMemberNames()) {
+    const auto& deps = root[packageName]["dependencies"];
+    for (const auto& dep : deps) {
+      allDependencies.insert(dep.asString());
+    }
+  }
+
+  // Check each installed package
+  for (const auto& packageName : root.getMemberNames()) {
+    // Skip if package is a dependency of another package
+    if (allDependencies.contains(packageName)) {
+      continue;
+    }
+
+    std::cout << "Package '" << packageName << "' is not required by any other package.\n";
+    std::cout << "Do you want to remove it? (y/n): ";
+
+    char response;
+    std::cin >> response;
+
+    if (std::tolower(response) == 'y') {
+      if (remove(packageName.c_str())) {
+        std::cout << "Successfully removed " << packageName << "\n";
+      } else {
+        std::cout << "Failed to remove " << packageName << "\n";
+      }
+    }
+  }
 }

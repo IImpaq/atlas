@@ -129,6 +129,15 @@ int main(int argc, char *argv[]) {
     return pm.Remove(argv[2]) ? 0 : 1;
   }
 
+  if (command == "cleanup") {
+    if (argc != 2) {
+      std::cout << RED << "Error: remove cleaning up packages\n" << RESET;
+      return 1;
+    }
+    pm.Cleanup();
+    return 0;
+  }
+
   if (command == "search") {
     if (argc != 3) {
       std::cout << RED << "Error: search requires a query argument\n" << RESET;

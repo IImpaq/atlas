@@ -55,6 +55,8 @@ public:
 
   bool Remove(const std::string &a_package_name);
 
+  void Cleanup();
+
   std::vector<std::string> Search(const std::string &a_query);
 
   void Info(const std::string &a_package_name);
@@ -93,6 +95,8 @@ private:
   bool downloadRepository(const std::string &a_username, const std::string &a_repo) const;
 
   bool extractPackage(const std::string &a_repo) const;
+
+  void cleanupPackages();
 };
 
 #endif // ATLAS_ATLAS_HPP
