@@ -58,7 +58,7 @@ private:
   void saveRepositories();
   void loadPackageIndex();
 
-  bool fetchRepository(const Repository &repo);
+  bool fetchRepository(const Repository &repo) const;
   bool installPackage(const PackageConfig &config);
   void recordInstallation(const PackageConfig &config);
   void recordRemoval(const PackageConfig &config);
@@ -75,9 +75,9 @@ private:
   void createMacOSShortcut(const std::string &repo);
   void createLinuxShortcut(const std::string &repo);
 
-  bool downloadRepository(const std::string &username, const std::string &repo);
+  bool downloadRepository(const std::string &username, const std::string &repo) const;
 
-  bool extractPackage(const std::string &repo);
+  bool extractPackage(const std::string &repo) const;
 };
 
 #endif // ATLAS_ATLAS_HPP

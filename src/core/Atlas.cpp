@@ -275,7 +275,7 @@ void Atlas::loadPackageIndex() {
   }
 }
 
-bool Atlas::fetchRepository(const Repository &repo) {
+bool Atlas::fetchRepository(const Repository &repo) const {
   fs::path repoPath = cacheDir / repo.name;
   fs::path zipPath = cacheDir / (repo.name + ".zip");
 
@@ -495,7 +495,7 @@ void Atlas::createLinuxShortcut(const std::string &repo) {
                                 fs::perms::others_read);
 }
 
-bool Atlas::downloadRepository(const std::string &username, const std::string &repo) {
+bool Atlas::downloadRepository(const std::string &username, const std::string &repo) const {
   CURL *curl = curl_easy_init();
   std::string url = "https://api.github.com/repos/" + username + "/" + repo +
                     "/zipball/master";
@@ -523,7 +523,7 @@ bool Atlas::downloadRepository(const std::string &username, const std::string &r
   return res == CURLE_OK;
 }
 
-bool Atlas::extractPackage(const std::string &repo) {
+bool Atlas::extractPackage(const std::string &repo) const {
   std::string zipPath = (cacheDir / (repo + ".zip")).string();
   std::string extractPath = (installDir / repo).string();
   std::string cmd = "unzip -o " + zipPath + " -d " + extractPath;

@@ -19,7 +19,7 @@ private:
     std::unordered_map<std::string, std::string> variables;
 
 public:
-    PackageParser(const std::string& url);
+    explicit PackageParser(const std::string& url);
 
     json parse();
 
