@@ -19,19 +19,20 @@ bool hasVerboseFlag(int argc, char *argv[]) {
 
 void printHelp(const char *progName) {
     std::cout << YELLOW << "Usage: " << progName << " <command> [args]\n\n"
-              << "Available commands:\n"
-              << GREEN << "  repo-add <name> <url>     Add a new repository\n"
-              << "  repo-remove <name>        Remove a repository\n"
-              << "  repo-enable <name>        Enable a repository\n"
-              << "  repo-disable <name>       Disable a repository\n"
-              << "  repo-list                 List all repositories\n"
-              << "  fetch                     Fetch updates from repositories\n"
-              << "  install <package>         Install a package\n"
-              << "  update                    Update installed packages\n"
-              << "  remove <package>          Remove a package\n"
-              << "  search <query>            Search for packages\n"
-              << "  info <package>            Show package information\n"
-              << "  help                      Show this help message\n"
+              << "Available commands:\n" << GREEN
+              << "\trepo-add <name> <url>     Add a new repository\n"
+              << "\trepo-remove <name>        Remove a repository\n"
+              << "\trepo-enable <name>        Enable a repository\n"
+              << "\trepo-disable <name>       Disable a repository\n"
+              << "\trepo-list                 List all repositories\n"
+              << "\tfetch                     Fetch updates from repositories\n"
+              << "\tinstall <package>         Install a package\n"
+              << "\tupdate                    Update installed packages\n"
+              << "\tremove <package>          Remove a package\n"
+              << "\tcleanup                   Clean up unused packages\n"
+              << "\tsearch <query>            Search for packages\n"
+              << "\tinfo <package>            Show package information\n"
+              << "\thelp                      Show this help message\n"
               << RESET;
 }
 
