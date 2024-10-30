@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Config.hpp"
 #include "pods/PackageConfig.hpp"
 #include "pods/Repository.hpp"
 #include "utils/LoadingAnimation.hpp"
@@ -24,7 +25,8 @@ namespace fs = std::filesystem;
 
 class Atlas {
 private:
-  bool verbose;
+  Config m_config;
+
   fs::path m_install_dir;
   fs::path m_cache_dir;
   fs::path m_shortcut_dir;

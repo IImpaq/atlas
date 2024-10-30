@@ -6,19 +6,26 @@
 
 #include <set>
 
+#include <toml++/toml.hpp>
+
 #include "utils/Misc.hpp"
+
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   ((std::string *) userp)->append((char *) contents, size * nmemb);
   return size * nmemb;
 }
 
-Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose)
-  : m_install_dir(fs::path(getenv("HOME")) / ".local/share/atlas"),
-    m_cache_dir(fs::path(getenv("HOME")) / ".cache/atlas"),
-    m_shortcut_dir(getDefaultShortcutDir()),
+Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool verbose)
+  : m_config(),
     m_repo_config_path(m_install_dir / "repositories.json"),
-    m_log_dir(m_install_dir / "logs"), verbose(a_verbose) {
+    m_log_dir(m_install_dir / "logs") {
+
+  // Use config values
+  m_install_dir = m_config.GetPaths().install_dir;
+  m_cache_dir = m_config.GetPaths().cache_dir;
+  m_shortcut_dir = m_config.GetPaths().shortcut_dir;
+
   fs::create_directories(m_install_dir);
   fs::create_directories(m_cache_dir);
   fs::create_directories(m_shortcut_dir);
@@ -334,7 +341,7 @@ bool Atlas::fetchRepository(const Repository &a_repo) const {
   std::string cmd =
       "unzip -o " + zipPath.string() + " -d " + repoPath.string();
   int extract_result =
-      ProcessCommand(cmd, m_log_dir.string() + "/latest.log", verbose);
+      ProcessCommand(cmd, m_log_dir.string() + "/latest.log", m_config.GetCore().verbose);
   fs::remove(zipPath);
 
   if (extract_result != 0) {
