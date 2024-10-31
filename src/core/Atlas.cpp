@@ -115,12 +115,13 @@ bool Atlas::Fetch() {
             package["build_command"].asString().c_str(),
             package["install_command"].asString().c_str(),
             package["uninstall_command"].asString().c_str(),
-            name
+            name,
+            ntl::Array<ntl::String>()
           };
 
           const Json::Value &deps = package["dependencies"];
           for (const auto &dep: deps) {
-            config.dependencies.push_back(dep.asString().c_str());
+            config.dependencies.Insert(dep.asString().c_str());
           }
           m_package_index[config.name] = config;
         }
@@ -284,7 +285,8 @@ void Atlas::loadPackageIndex() {
           root["build_command"].asString().c_str(),
           root["install_command"].asString().c_str(),
           root["uninstall_command"].asString().c_str(),
-          name
+          name,
+          ntl::Array<ntl::String>()
         };
         m_package_index[config.name] = config;
       }

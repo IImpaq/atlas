@@ -5,8 +5,7 @@
 #ifndef ATLAS_PACKAGE_CONFIG_HPP
 #define ATLAS_PACKAGE_CONFIG_HPP
 
-#include <vector>
-
+#include <data/Array.hpp>
 #include <data/String.hpp>
 
 struct PackageConfig {
@@ -17,7 +16,7 @@ struct PackageConfig {
     ntl::String install_command;
     ntl::String uninstall_command;
     ntl::String repository;
-    std::vector<ntl::String> dependencies;
+    ntl::Array<ntl::String> dependencies;
 };
 
 #endif // ATLAS_PACKAGE_CONFIG_HPP
