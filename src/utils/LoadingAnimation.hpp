@@ -7,17 +7,18 @@
 
 #include <thread>
 #include <iostream>
-#include <string>
+
+#include <data/String.hpp>
 
 class LoadingAnimation {
 private:
     bool m_running;
     std::thread m_animator;
-    std::string m_message;
-    const std::vector<std::string> m_frames = {"|", "/", "-", "\\"};
+    ntl::String m_message;
+    const std::vector<ntl::String> m_frames = {"|", "/", "-", "\\"};
 
 public:
-    explicit LoadingAnimation(const std::string &a_msg);
+    explicit LoadingAnimation(const ntl::String &a_msg);
     ~LoadingAnimation();
 
     void Stop();

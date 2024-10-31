@@ -4,7 +4,7 @@
 
 #include "LoadingAnimation.hpp"
 
-LoadingAnimation::LoadingAnimation(const std::string &a_msg): m_running(true), m_message(a_msg) {
+LoadingAnimation::LoadingAnimation(const ntl::String &a_msg): m_running(true), m_message(a_msg) {
   m_animator = std::thread(&LoadingAnimation::animate, this);
 }
 

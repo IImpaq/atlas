@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <regex>
 
+#include <data/String.hpp>
 #include <json/json.h>
 
 #include "pods/PackageConfig.hpp"
@@ -20,7 +21,7 @@ private:
     fs::path m_install_dir;
     fs::path m_log_dir;
     Json::Value m_config;
-    std::string m_platform;
+    ntl::String m_platform;
 
 public:
     PackageInstaller(const fs::path &a_cache, const fs::path &a_install,
@@ -35,8 +36,8 @@ public:
 
 private:
     bool executeCommands(const Json::Value &a_commands);
-    std::string replaceVariables(const std::string &a_cmd);
-    bool downloadFile(const std::string &a_url, const std::string &a_target);
+    ntl::String replaceVariables(const ntl::String &a_cmd);
+    bool downloadFile(const ntl::String &a_url, const ntl::String &a_target);
 };
 
 #endif // ATLAS_PACKAGE_INSTALLER_HPP

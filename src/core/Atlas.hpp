@@ -13,13 +13,15 @@
 #include <json/json.h>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "Config.hpp"
 #include "pods/PackageConfig.hpp"
 #include "pods/Repository.hpp"
 #include "utils/LoadingAnimation.hpp"
 #include "core/PackageInstaller.hpp"
+
+#include <data/Array.hpp>
+#include <data/String.hpp>
 
 namespace fs = std::filesystem;
 
@@ -32,38 +34,38 @@ private:
   fs::path m_shortcut_dir;
   fs::path m_repo_config_path;
   fs::path m_log_dir;
-  std::unordered_map<std::string, Repository> m_repositories;
-  std::unordered_map<std::string, PackageConfig> m_package_index;
+  std::unordered_map<ntl::String, Repository> m_repositories;
+  std::unordered_map<ntl::String, PackageConfig> m_package_index;
 
 public:
   Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
 
-  bool AddRepository(const std::string &a_name, const std::string &a_url,
-                     const std::string &a_branch = "main");
+  bool AddRepository(const ntl::String &a_name, const ntl::String &a_url,
+                     const ntl::String &a_branch = "main");
 
-  bool RemoveRepository(const std::string &a_name);
+  bool RemoveRepository(const ntl::String &a_name);
 
-  bool EnableRepository(const std::string &a_name);
+  bool EnableRepository(const ntl::String &a_name);
 
-  bool DisableRepository(const std::string &a_name);
+  bool DisableRepository(const ntl::String &a_name);
 
   void ListRepositories();
 
   bool Fetch();
 
-  bool Install(const std::string &a_package_name);
+  bool Install(const ntl::String &a_package_name);
 
   bool Update();
 
-  bool Remove(const std::string &a_package_name);
+  bool Remove(const ntl::String &a_package_name);
 
   void Cleanup();
 
-  std::vector<std::string> Search(const std::string &a_query);
+  std::vector<ntl::String> Search(const ntl::String &a_query);
 
-  void Info(const std::string &a_package_name);
+  void Info(const ntl::String &a_package_name);
 
-  bool IsInstalled(const std::string &a_package_name) const;
+  bool IsInstalled(const ntl::String &a_package_name) const;
 
 private:
   void loadRepositories();
@@ -80,7 +82,7 @@ private:
 
   void recordRemoval(const PackageConfig &a_config);
 
-  std::string getCurrentDateTime();
+  ntl::String getCurrentDateTime();
 
   bool removePackage(const PackageConfig &a_config);
 
@@ -88,15 +90,15 @@ private:
 
   fs::path getDefaultShortcutDir();
 
-  void createShortcut(const std::string &a_repo);
+  void createShortcut(const ntl::String &a_repo);
 
-  void createMacOSShortcut(const std::string &a_repo);
+  void createMacOSShortcut(const ntl::String &a_repo);
 
-  void createLinuxShortcut(const std::string &a_repo);
+  void createLinuxShortcut(const ntl::String &a_repo);
 
-  bool downloadRepository(const std::string &a_username, const std::string &a_repo) const;
+  bool downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const;
 
-  bool extractPackage(const std::string &a_repo) const;
+  bool extractPackage(const ntl::String &a_repo) const;
 
   void cleanupPackages();
 };

@@ -5,12 +5,13 @@
 #ifndef ATLAS_REPOSITORY_HPP
 #define ATLAS_REPOSITORY_HPP
 
-#include <string>
+#include <data/Bool.hpp>
+#include <data/String.hpp>
 
 struct Repository {
-    std::string name;
-    std::string url;
-    std::string branch;
+    ntl::String name;
+    ntl::String url;
+    ntl::String branch;
     bool enabled;
 };
 
