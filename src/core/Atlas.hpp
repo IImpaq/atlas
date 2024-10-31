@@ -61,6 +61,8 @@ namespace atlas {
 
     bool Update();
 
+    bool Upgrade(const ntl::String &a_package_name);
+
     bool LockPackage(const ntl::String& name);
 
     bool UnlockPackage(const ntl::String& name);
@@ -93,6 +95,8 @@ namespace atlas {
     void recordInstallation(const PackageConfig &a_config);
 
     void recordRemoval(const PackageConfig &a_config);
+
+    bool upgrade(const PackageConfig &a_config);
 
     ntl::String getCurrentDateTime();
 

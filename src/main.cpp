@@ -27,7 +27,8 @@ void printHelp(const char *progName) {
               << "\tfetch                     Fetch updates from repositories\n"
               << "\tinstall <package>         Install a package\n"
               << "\tremove <package>          Remove a package\n"
-              << "\tupdate                    Update installed packages\n"
+              << "\tupdate                    Update all installed packages\n"
+              << "\tupgrade <package>         Upgrade a specific package\n"
               << "\tlock <package>            Lock a package\n"
               << "\tunlock <package>          Unlock a package\n"
               << "\tcleanup                   Clean up unused packages\n"
@@ -120,6 +121,14 @@ int main(int argc, char *argv[]) {
 
   if (command == "update") {
     return pm.Update() ? 0 : 1;
+  }
+
+  if (command == "upgrade") {
+    if (argc != 3) {
+      std::cout << RED << "Error: Upgrade requires package name\n" << RESET;
+      return 1;
+    }
+    return pm.Upgrade(argv[2]) ? 0 : 1;
   }
 
   if (command == "lock") {

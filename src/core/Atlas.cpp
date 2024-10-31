@@ -206,6 +206,15 @@ namespace atlas {
     return success;
   }
 
+  bool Atlas::Upgrade(const ntl::String &a_package_name) {
+    if (m_package_index.Find(a_package_name) == m_package_index.end()) {
+      LOG_ERROR("Package not found");
+      return false;
+    }
+
+    return upgrade(m_package_index[a_package_name]);
+  }
+
   bool Atlas::LockPackage(const ntl::String& name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
@@ -548,6 +557,35 @@ namespace atlas {
 
     std::ofstream db_file(db_path);
     db_file << root;
+  }
+
+  bool Atlas::upgrade(const PackageConfig &a_config) {
+    bool success = true;
+    fs::path dbPath = m_install_dir / "installed.json";
+    Json::Value root;
+
+    if (fs::exists(dbPath)) {
+      std::ifstream dbFile(dbPath);
+      dbFile >> root;
+    }
+
+    if (IsInstalled(a_config.name)) {
+      ntl::String localVersion = root[a_config.name.GetCString()]["version"].asString().c_str();
+
+      if (root[a_config.name.GetCString()]["locked"].asBool()) {
+        LOG_MSG("Packege locked for updates " + a_config.name);
+        return false;
+      }
+
+      if (a_config.version != localVersion) {
+        LOG_MSG("Updating " + a_config.name + " from version " + localVersion + " to " + a_config.version + "...\n");
+        success &= installPackage(a_config);
+      } else {
+        LOG_MSG("No update found\n");
+      }
+    }
+
+    return success;
   }
 
   ntl::String Atlas::getCurrentDateTime() {
