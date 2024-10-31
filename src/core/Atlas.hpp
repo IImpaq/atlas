@@ -67,6 +67,10 @@ namespace atlas {
 
     void Cleanup();
 
+    bool KeepPackage(const ntl::String& name);
+
+    bool UnkeepPackage(const ntl::String& name);
+
     std::vector<ntl::String> Search(const ntl::String &a_query);
 
     void Info(const ntl::String &a_package_name);

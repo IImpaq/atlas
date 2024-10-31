@@ -31,6 +31,8 @@ void printHelp(const char *progName) {
               << "\tlock <package>            Lock a package\n"
               << "\tunlock <package>          Unlock a package\n"
               << "\tcleanup                   Clean up unused packages\n"
+              << "\tkeep <package>            Keep a package during cleanup\n"
+              << "\tunkeep <package>          Do not keep a package during cleanup\n"
               << "\tsearch <query>            Search for packages\n"
               << "\tinfo <package>            Show package information\n"
               << "\thelp                      Show this help message\n"
@@ -143,6 +145,22 @@ int main(int argc, char *argv[]) {
     }
     pm.Cleanup();
     return 0;
+  }
+
+  if (command == "keep") {
+    if (argc != 3) {
+      std::cout << RED << "Error: keep requires package name\n" << RESET;
+      return 1;
+    }
+    return pm.KeepPackage(argv[2]) ? 0 : 1;
+  }
+
+  if (command == "unkeep") {
+    if (argc != 3) {
+      std::cout << RED << "Error: unkeep requires package name\n" << RESET;
+      return 1;
+    }
+    return pm.UnkeepPackage(argv[2]) ? 0 : 1;
   }
 
   if (command == "search") {

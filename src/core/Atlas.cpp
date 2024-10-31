@@ -249,6 +249,43 @@ namespace atlas {
     cleanupPackages();
   }
 
+  bool Atlas::KeepPackage(const ntl::String& name) {
+    fs::path dbPath = m_install_dir / "installed.json";
+    Json::Value root;
+
+    if (!IsInstalled(name)) {
+      LOG_ERROR("Package not installed\n");
+      return false;
+    }
+
+    if (fs::exists(dbPath)) {
+      std::ifstream dbFile(dbPath);
+      dbFile >> root;
+      root[name.GetCString()]["keep"] = true;
+      std::ofstream outFile(dbPath);
+      outFile << root;
+
+      LOG_MSG("Keeping package " + name + "!\n");
+    }
+    return true;
+  }
+
+  bool Atlas::UnkeepPackage(const ntl::String& name) {
+    fs::path dbPath = m_install_dir / "installed.json";
+    Json::Value root;
+
+    if (fs::exists(dbPath)) {
+      std::ifstream dbFile(dbPath);
+      dbFile >> root;
+      root[name.GetCString()]["keep"] = false;
+      std::ofstream outFile(dbPath);
+      outFile << root;
+
+      LOG_MSG("Not keeping package " + name + "!\n");
+    }
+    return true;
+  }
+
   std::vector<ntl::String> Atlas::Search(const ntl::String &a_query) {
     std::vector<ntl::String> results;
     std::string str;
@@ -566,7 +603,6 @@ namespace atlas {
   }
 
   void Atlas::cleanupPackages() {
-    // Read installed packages
     fs::path dbPath = m_install_dir / "installed.json";
     if (!fs::exists(dbPath)) {
       return;
@@ -589,6 +625,13 @@ namespace atlas {
     for (const auto& packageName : root.getMemberNames()) {
       // Skip if package is a dependency of another package
       if (allDependencies.contains(packageName.c_str())) {
+        continue;
+      }
+
+      // Skip if package is marked to keep
+      bool keepPackage = root[packageName]["keep"].asBool();
+      if (keepPackage) {
+        LOG_MSG(ntl::String{"Package '"} + packageName.c_str() + "' is marked to keep and will not be removed.\n");
         continue;
       }
 
