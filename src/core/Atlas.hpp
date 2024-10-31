@@ -26,82 +26,85 @@
 
 namespace fs = std::filesystem;
 
-class Atlas {
-private:
-  Config m_config;
+namespace atlas {
+  class Atlas {
+  private:
+    Config m_config;
 
-  fs::path m_install_dir;
-  fs::path m_cache_dir;
-  fs::path m_shortcut_dir;
-  fs::path m_repo_config_path;
-  fs::path m_log_dir;
-  ntl::Map<ntl::String, Repository> m_repositories;
-  ntl::Map<ntl::String, PackageConfig> m_package_index;
+    fs::path m_install_dir;
+    fs::path m_cache_dir;
+    fs::path m_shortcut_dir;
+    fs::path m_repo_config_path;
+    fs::path m_log_dir;
+    ntl::Map<ntl::String, Repository> m_repositories;
+    ntl::Map<ntl::String, PackageConfig> m_package_index;
 
-public:
-  Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
+  public:
+    Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
+    ~Atlas();
 
-  bool AddRepository(const ntl::String &a_name, const ntl::String &a_url,
-                     const ntl::String &a_branch = "main");
+    bool AddRepository(const ntl::String &a_name, const ntl::String &a_url,
+                       const ntl::String &a_branch = "main");
 
-  bool RemoveRepository(const ntl::String &a_name);
+    bool RemoveRepository(const ntl::String &a_name);
 
-  bool EnableRepository(const ntl::String &a_name);
+    bool EnableRepository(const ntl::String &a_name);
 
-  bool DisableRepository(const ntl::String &a_name);
+    bool DisableRepository(const ntl::String &a_name);
 
-  void ListRepositories();
+    void ListRepositories();
 
-  bool Fetch();
+    bool Fetch();
 
-  bool Install(const ntl::String &a_package_name);
+    bool Install(const ntl::String &a_package_name);
 
-  bool Update();
+    bool Update();
 
-  bool Remove(const ntl::String &a_package_name);
+    bool Remove(const ntl::String &a_package_name);
 
-  void Cleanup();
+    void Cleanup();
 
-  std::vector<ntl::String> Search(const ntl::String &a_query);
+    std::vector<ntl::String> Search(const ntl::String &a_query);
 
-  void Info(const ntl::String &a_package_name);
+    void Info(const ntl::String &a_package_name);
 
-  bool IsInstalled(const ntl::String &a_package_name) const;
+    bool IsInstalled(const ntl::String &a_package_name) const;
 
-private:
-  void loadRepositories();
+  private:
+    void loadRepositories();
 
-  void saveRepositories();
+    void saveRepositories();
 
-  void loadPackageIndex();
+    void loadPackageIndex();
 
-  bool fetchRepository(const Repository &a_repo) const;
+    bool fetchRepository(const Repository &a_repo) const;
 
-  bool installPackage(const PackageConfig &a_config);
+    bool installPackage(const PackageConfig &a_config);
 
-  void recordInstallation(const PackageConfig &a_config);
+    void recordInstallation(const PackageConfig &a_config);
 
-  void recordRemoval(const PackageConfig &a_config);
+    void recordRemoval(const PackageConfig &a_config);
 
-  ntl::String getCurrentDateTime();
+    ntl::String getCurrentDateTime();
 
-  bool removePackage(const PackageConfig &a_config);
+    bool removePackage(const PackageConfig &a_config);
 
-  bool isMacOS();
+    bool isMacOS();
 
-  fs::path getDefaultShortcutDir();
+    fs::path getDefaultShortcutDir();
 
-  void createShortcut(const ntl::String &a_repo);
+    void createShortcut(const ntl::String &a_repo);
 
-  void createMacOSShortcut(const ntl::String &a_repo);
+    void createMacOSShortcut(const ntl::String &a_repo);
 
-  void createLinuxShortcut(const ntl::String &a_repo);
+    void createLinuxShortcut(const ntl::String &a_repo);
 
-  bool downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const;
+    bool downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const;
 
-  bool extractPackage(const ntl::String &a_repo) const;
+    bool extractPackage(const ntl::String &a_repo) const;
 
-  void cleanupPackages();
-};
+    void cleanupPackages();
+  };
+}
 
 #endif // ATLAS_ATLAS_HPP

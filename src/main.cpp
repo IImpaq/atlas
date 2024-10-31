@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
   }
 
   fs::path homeDir = getenv("HOME");
-  Atlas pm(homeDir / ".local/share/atlas", homeDir / ".cache/atlas",
+  atlas::Atlas pm(homeDir / ".local/share/atlas", homeDir / ".cache/atlas",
                     hasVerboseFlag(argc, argv));
 
   std::string command = argv[1];
