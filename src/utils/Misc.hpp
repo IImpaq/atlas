@@ -15,6 +15,9 @@
 extern const char *RED;
 extern const char *GREEN;
 extern const char *YELLOW;
+extern const char *BLUE;
+extern const char *MAGENTA;
+extern const char *CYAN;
 extern const char *RESET;
 
 static void LogOutputToFile(const ntl::String &a_output,

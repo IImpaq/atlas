@@ -487,7 +487,7 @@ namespace atlas {
 
     // Then proceed with the main package installation
     PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
-    LoadingAnimation loading("Installing " + a_config.name);
+    LoadingAnimation loading(("Installing " + a_config.name).GetCString());
 
     bool success = installer.Download() && installer.Prepare() &&
                   installer.Build() && installer.Install() &&
@@ -507,7 +507,7 @@ namespace atlas {
   bool Atlas::removePackage(const PackageConfig &a_config) {
     PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
-    LoadingAnimation loading("Removing " + a_config.name);
+    LoadingAnimation loading(("Removing " + a_config.name).GetCString());
 
     bool success = installer.Uninstall();
 
@@ -537,6 +537,7 @@ namespace atlas {
     package["install_date"] = getCurrentDateTime().GetCString();
     package["repository"] = a_config.repository.GetCString();
     package["locked"] = false;
+    package["keep"] = false;
 
     root[a_config.name.GetCString()] = package;
 

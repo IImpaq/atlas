@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 
 #include "utils/JobSystem.hpp"
+#include "utils/Misc.hpp"
 
 namespace atlas {
   void Logger::Initialize() {
@@ -140,23 +141,40 @@ namespace atlas {
     ntl::String prefix = "";
 
     switch(a_verbosity) {
-      case Verbosity::MSG:
-        break;
-      case Verbosity::DEBUG:
-        prefix = "[DEBUG] ";
-        break;
-      case Verbosity::INFO:
-        prefix = "[INFO] ";
-        break;
-      case Verbosity::WARN:
-        prefix = "[WARN] ";
-        break;
-      case Verbosity::ERROR:
-        prefix = "[ERROR] ";
-        break;
-      case Verbosity::FATAL:
-        prefix = "[FATAL] ";
-        break;
+    case Verbosity::MSG:
+      break;
+    case Verbosity::DEBUG:
+      prefix = BLUE + ntl::String{"› Debug: "} + RESET;
+      // prefix = BLUE + ntl::String{"🔍 Debug: "} + RESET;
+      //     prefix = BLUE + "[-] Debug → " + RESET;
+      //     prefix = BLUE + "› " + RESET;
+      break;
+    case Verbosity::INFO:
+      prefix = GREEN + ntl::String{"✓️ Info: "} + RESET;
+      // prefix = GREEN + ntl::String{"✔️ Info: "} + RESET;
+      // prefix = GREEN + ntl::String{"ℹ️ Info: "} + RESET;
+      //     prefix = GREEN + "[+] Info → " + RESET;
+      //     prefix = GREEN + "• " + RESET;
+      break;
+    case Verbosity::WARN:
+      prefix = YELLOW + ntl::String{"⚡️ Warning: "} + RESET;
+      // prefix = YELLOW + ntl::String{"⚠️ Warning: "} + RESET;
+      //     prefix = YELLOW + "[!] Warning → " + RESET;
+      //     prefix = YELLOW + "⚡ " + RESET;
+      break;
+    case Verbosity::ERROR:
+      prefix = RED + ntl::String{"✕ Error: "} + RESET;
+      // prefix = RED + ntl::String{"❌ Error: "} + RESET;
+      //     prefix = RED + "[✗] Error → " + RESET;
+      //     prefix = RED + "✕ " + RESET;
+      // ✘ Error:
+      break;
+    case Verbosity::FATAL:
+      prefix = MAGENTA + ntl::String{"☠ Fatal: "} + RESET;
+      // prefix = MAGENTA + ntl::String{"💥 FATAL: "} + RESET;
+      //     prefix = MAGENTA + "[☠] FATAL → " + RESET;
+      // prefix = MAGENTA + "⬢ " + RESET;
+      break;
     }
 
     return prefix;

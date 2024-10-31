@@ -13,13 +13,19 @@
 namespace atlas {
     class LoadingAnimation {
     private:
-        bool m_running;
+        mutable size_t m_lastLineLength = 0;
+        std::atomic<bool> m_running{false};
+        std::string m_message;
+        std::vector<std::string> m_frames{std::begin(DEFAULT_FRAMES), std::end(DEFAULT_FRAMES)};
         std::thread m_animator;
-        ntl::String m_message;
-        const std::vector<ntl::String> m_frames = {"|", "/", "-", "\\"};
+        // const std::vector<ntl::String> m_frames = {"|", "/", "-", "\\"};
+
+        static constexpr const char* DEFAULT_FRAMES[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+        static constexpr const char* DONE_SYMBOL = "✓";
+        static constexpr int FRAME_DELAY_MS = 80;
 
     public:
-        explicit LoadingAnimation(const ntl::String &a_msg);
+        explicit LoadingAnimation(const std::string &a_msg);
         ~LoadingAnimation();
 
         void Stop();
