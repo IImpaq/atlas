@@ -51,6 +51,9 @@ void printHelp(const char* progName) {
               << "  keep <package>             Protect from cleanup\n"
               << "  unkeep <package>           Allow cleanup\n"
               << "  cleanup                    Remove unused packages\n\n"
+              << YELLOW << "Atlas Management:" << RESET << "\n"
+              << "  self-setup                 Setup atlas to be globally accessible\n"
+              << "  self-purge                 Get rid of atlas again\n"
               << YELLOW << "Options:" << RESET << "\n"
               << "  -v, --verbose              Enable verbose output\n\n";
 }
@@ -93,7 +96,11 @@ const std::map<ntl::String, Command> COMMANDS = {
             return 0;
         }}},
     {"info", {"Show package information", 1,
-        [](atlas::Atlas& pm, const auto& args) { pm.Info(args[0]); return 0; }}}
+        [](atlas::Atlas& pm, const auto& args) { pm.Info(args[0]); return 0; }}},
+    {"self-setup", {"Setup atlas to be globally accessible", 0,
+        [](atlas::Atlas& pm, const auto& args) { return pm.AtlasSetup(); }}},
+    {"self-purge", {"Get rid of atlas again", 0,
+        [](atlas::Atlas& pm, const auto& args) { return pm.AtlasPurge(); }}}
 };
 
 int main(int argc, char* argv[]) {

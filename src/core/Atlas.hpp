@@ -79,6 +79,10 @@ namespace atlas {
 
     bool IsInstalled(const ntl::String &a_package_name) const;
 
+    bool AtlasSetup();
+
+    bool AtlasPurge();
+
   private:
     void loadRepositories();
 

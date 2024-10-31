@@ -334,6 +334,79 @@ namespace atlas {
     return root.isMember(a_package_name.GetCString());
   }
 
+  bool Atlas::AtlasSetup() {
+    fs::path currentExePath = fs::current_path() / "atlas";
+    fs::path homeDir = getenv("HOME");
+    fs::path binDir = homeDir / ".local/bin";
+    fs::path installPath = binDir / "atlas";
+
+    try {
+      // Create user bin directory if it doesn't exist
+      fs::create_directories(binDir);
+
+      // Copy executable
+      fs::copy(currentExePath, installPath, fs::copy_options::overwrite_existing);
+
+      // Set executable permissions
+      fs::permissions(installPath, fs::perms::owner_read | fs::perms::owner_write | fs::perms::owner_exec);
+
+      // Add to PATH if not already present
+      std::string pathAdd = "\nexport PATH=\"$HOME/.local/bin:$PATH\"\n";
+
+      // Check and update .bashrc
+      std::string bashrcPath = (homeDir / ".bashrc").string();
+      if (fs::exists(bashrcPath)) {
+        std::ifstream bashrcRead(bashrcPath);
+        std::string content((std::istreambuf_iterator<char>(bashrcRead)),
+                           std::istreambuf_iterator<char>());
+
+        if (content.find(".local/bin:$PATH") == std::string::npos) {
+          std::ofstream bashrc(bashrcPath, std::ios_base::app);
+          bashrc << pathAdd;
+          LOG_MSG("Added to PATH in .bashrc\n");
+        }
+      }
+
+      // Check and update .zshrc
+      std::string zshrcPath = (homeDir / ".zshrc").string();
+      if (fs::exists(zshrcPath)) {
+        std::ifstream zshrcRead(zshrcPath);
+        std::string content((std::istreambuf_iterator<char>(zshrcRead)),
+                           std::istreambuf_iterator<char>());
+
+        if (content.find(".local/bin:$PATH") == std::string::npos) {
+          std::ofstream zshrc(zshrcPath, std::ios_base::app);
+          zshrc << pathAdd;
+          LOG_MSG("Added to PATH in .zshrc\n");
+        }
+      }
+
+      LOG_INFO("Installation complete. Please restart your terminal or run 'source ~/.bashrc' (or ~/.zshrc)");
+      return true;
+    } catch (const std::exception& e) {
+      LOG_ERROR("Installation failed: " + ntl::String(e.what()));
+      return false;
+    }
+  }
+
+  bool Atlas::AtlasPurge() {
+    fs::path homeDir = getenv("HOME");
+    fs::path installPath = homeDir / ".local/bin/atlas";
+
+    try {
+      if (fs::exists(installPath)) {
+        fs::remove(installPath);
+        LOG_INFO("Uninstallation complete. You may want to remove the PATH addition from ~/.bashrc and ~/.zshrc");
+        return true;
+      }
+      return false;
+    } catch (const std::exception& e) {
+      LOG_ERROR("Uninstallation failed: " + ntl::String(e.what()));
+      return false;
+    }
+  }
+
+
   void Atlas::loadRepositories() {
     if (!fs::exists(m_repo_config_path)) {
       return;
