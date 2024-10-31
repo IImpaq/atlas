@@ -110,7 +110,7 @@ namespace atlas {
       return;
     }
 
-    ntl::String log = getVerbosityPrefix(a_verbosity) + " " + a_message + "\n";
+    ntl::String log = getVerbosityPrefix(a_verbosity) + a_message + "\n";
     auto threshold = m_buffer_threshold;
     m_configuration_lock.EndRead();
 
@@ -143,19 +143,19 @@ namespace atlas {
       case Verbosity::MSG:
         break;
       case Verbosity::DEBUG:
-        prefix = "[DEBUG]";
+        prefix = "[DEBUG] ";
         break;
       case Verbosity::INFO:
-        prefix = "[INFO]";
+        prefix = "[INFO] ";
         break;
       case Verbosity::WARN:
-        prefix = "[WARN]";
+        prefix = "[WARN] ";
         break;
       case Verbosity::ERROR:
-        prefix = "[ERROR]";
+        prefix = "[ERROR] ";
         break;
       case Verbosity::FATAL:
-        prefix = "[FATAL]";
+        prefix = "[FATAL] ";
         break;
     }
 

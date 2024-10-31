@@ -34,6 +34,7 @@ namespace atlas {
             auto job = JobSystem::Instance().GetJobOrWait();
             job();
             --m_running_jobs;
+            m_jobs_changed.Broadcast();
           }
         }
       };

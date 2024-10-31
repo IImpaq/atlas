@@ -46,7 +46,7 @@ namespace atlas {
 
   bool Atlas::AddRepository(const ntl::String &a_name, const ntl::String &a_url, const ntl::String &a_branch) {
     if (m_repositories.Find(a_name) != m_repositories.end()) {
-      std::cerr << "Repository already exists\n";
+      LOG_ERROR("Repository already exists\n");
       return false;
     }
 
@@ -58,7 +58,7 @@ namespace atlas {
 
   bool Atlas::RemoveRepository(const ntl::String &a_name) {
     if (m_repositories.Find(a_name) == m_repositories.end()) {
-      std::cerr << "Repository not found\n";
+      LOG_ERROR("Repository not found\n");
       return false;
     }
     m_repositories.Remove(a_name);
@@ -69,24 +69,31 @@ namespace atlas {
   }
 
   bool Atlas::EnableRepository(const ntl::String &a_name) {
-    if (m_repositories.Find(a_name) == m_repositories.end())
+    if (m_repositories.Find(a_name) == m_repositories.end()) {
+      LOG_ERROR("Repository '" + a_name + "' not found...");
       return false;
+    }
     m_repositories[a_name].enabled = true;
     saveRepositories();
     loadPackageIndex();
+    LOG_MSG("Repository '" + a_name + "' enabled!");
     return true;
   }
 
   bool Atlas::DisableRepository(const ntl::String &a_name) {
-    if (m_repositories.Find(a_name) == m_repositories.end())
+    if (m_repositories.Find(a_name) == m_repositories.end()) {
+      LOG_ERROR("Repository '" + a_name + "' not found...");
       return false;
+    }
     m_repositories[a_name].enabled = false;
     saveRepositories();
     loadPackageIndex();
+    LOG_MSG("Repository '" + a_name + "' disabled!");
     return true;
   }
 
   void Atlas::ListRepositories() {
+    LOG_MSG("Local repositories:");
     for (const auto &[name, repo] : m_repositories) {
       LOG_MSG(name + " (" + (repo.enabled ? "enabled" : "disabled") + ")\n"
                 + "  URL: " + repo.url + "\n" + "  Branch: " + repo.branch + "\n");
@@ -103,9 +110,9 @@ namespace atlas {
       if (!repo.enabled)
         continue;
 
-      std::cout << "Fetching " << name << "...\n";
+      LOG_MSG("Fetching " + name + "...\n");
       if (!fetchRepository(repo)) {
-        std::cerr << "Failed to fetch repository: " << name << "\n";
+        LOG_ERROR("Failed to fetch repository: " + name + "\n");
         success = false;
         continue;
       }
@@ -136,8 +143,7 @@ namespace atlas {
             m_package_index[config.name] = config;
           }
         } catch (const std::exception &e) {
-          std::cerr << "Error parsing package index for " << name << ": "
-              << e.what() << "\n";
+          LOG_ERROR("Error parsing package index for " + name + ": " + e.what() + "\n");
           success = false;
         }
       }
@@ -150,7 +156,7 @@ namespace atlas {
 
   bool Atlas::Install(const ntl::String &a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
-      std::cerr << "Package not found\n";
+      LOG_ERROR("Package not found\n");
       return false;
     }
     return installPackage(m_package_index[a_package_name]);
@@ -173,15 +179,14 @@ namespace atlas {
         ntl::String localVersion = root[name.GetCString()]["version"].asString().c_str();
         if (config.version != localVersion) {
           installedSomething = true;
-          std::cout << "Updating " << name << " from version " << localVersion
-              << " to " << config.version << "...\n";
+          LOG_MSG("Updating " + name + " from version " + localVersion + " to " + config.version + "...\n");
           success &= installPackage(config);
         }
       }
     }
 
     if (!installedSomething) {
-      std::cout << "No updates found\n";
+      LOG_MSG("No updates found\n");
     }
 
     return success;
@@ -189,14 +194,14 @@ namespace atlas {
 
   bool Atlas::Remove(const ntl::String &a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
-      std::cerr << "Package not found\n";
+      LOG_ERROR("Package not found\n");
       return false;
     }
     return removePackage(m_package_index[a_package_name]);
   }
 
   void Atlas::Cleanup() {
-    std::cout << "Finding orphaned packages to remove...\n";
+    LOG_MSG("Finding orphaned packages to remove...\n");
     cleanupPackages();
   }
 
@@ -213,17 +218,17 @@ namespace atlas {
 
   void Atlas::Info(const ntl::String &a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
-      std::cerr << "Package not found\n";
+      LOG_ERROR("Package not found\n");
       return;
     }
 
     const auto &config = m_package_index[a_package_name];
-    std::cout << "Name: " << config.name << "\n"
-        << "Version: " << config.version << "\n"
-        << "Description: " << config.description << "\n"
-        << "Status: " << (IsInstalled(a_package_name) ? GREEN : RED)
-        << (IsInstalled(a_package_name) ? "Installed" : "Not installed")
-        << "\n";
+    LOG_MSG("Name: " + config.name + "\n"
+        + "Version: " + config.version + "\n"
+        + "Description: " + config.description + "\n"
+        + "Status: " + (IsInstalled(a_package_name) ? GREEN : RED)
+        + (IsInstalled(a_package_name) ? "Installed" : "Not installed")
+        + "\n");
   }
 
   bool Atlas::IsInstalled(const ntl::String &a_package_name) const {
@@ -310,7 +315,7 @@ namespace atlas {
 
     CURL *curl = curl_easy_init();
     if (!curl) {
-      std::cerr << "Failed to initialize CURL\n";
+      LOG_ERROR("Failed to initialize CURL\n");
       return false;
     }
 
@@ -319,7 +324,7 @@ namespace atlas {
     FILE *fp = fopen(zipPath.string().c_str(), "wb");
     if (!fp) {
       curl_easy_cleanup(curl);
-      std::cerr << "Failed to create zip file\n";
+      LOG_ERROR("Failed to create zip file\n");
       return false;
     }
 
@@ -339,7 +344,7 @@ namespace atlas {
     curl_easy_cleanup(curl);
 
     if (res != CURLE_OK) {
-      std::cerr << "Download failed: " << curl_easy_strerror(res) << "\n";
+      LOG_ERROR(ntl::String{"Download failed: "} + curl_easy_strerror(res) + "\n");
       return false;
     }
 
@@ -353,7 +358,7 @@ namespace atlas {
     fs::remove(zipPath);
 
     if (extract_result != 0) {
-      std::cerr << "Failed to extract repository\n";
+      LOG_ERROR("Failed to extract repository\n");
       return false;
     }
 
@@ -379,13 +384,13 @@ namespace atlas {
     // First install all dependencies
     for (const auto& dep : a_config.dependencies) {
       if (m_package_index.Find(dep) == m_package_index.end()) {
-        std::cerr << "Unknown dependency " << dep << "\n";
+        LOG_ERROR("Unknown dependency " + dep + "\n");
         return false;
       }
 
       PackageConfig dep_config = m_package_index[dep];
       if (!installPackage(dep_config)) {
-        std::cerr << "Failed to install dependency: " + dep + "\n";
+        LOG_ERROR("Failed to install dependency: " + dep + "\n");
         return false;
       }
     }
@@ -401,7 +406,7 @@ namespace atlas {
     loading.Stop();
 
     if (!success) {
-      std::cerr << "Installation failed for " + a_config.name + "\n";
+      LOG_ERROR("Installation failed for " + a_config.name + "\n");
       return false;
     }
 
@@ -463,7 +468,7 @@ namespace atlas {
     loading.Stop();
 
     if (!success) {
-      std::cerr << "Removal failed for " + a_config.name + "\n";
+      LOG_ERROR("Removal failed for " + a_config.name + "\n");
       return false;
     }
 
@@ -600,17 +605,17 @@ namespace atlas {
         continue;
       }
 
-      std::cout << "Package '" << packageName << "' is not required by any other package.\n";
-      std::cout << "Do you want to remove it? (y/n): ";
+      LOG_MSG(ntl::String{"Package '"} + packageName.c_str() + "' is not required by any other package.\n");
+      LOG_MSG("Do you want to remove it? (y/n): ");
 
       char response;
       std::cin >> response;
 
       if (std::tolower(response) == 'y') {
         if (remove(packageName.c_str())) {
-          std::cout << "Successfully removed " << packageName << "\n";
+          LOG_MSG(ntl::String{"Successfully removed "} + packageName.c_str() + "\n");
         } else {
-          std::cout << "Failed to remove " << packageName << "\n";
+          LOG_MSG(ntl::String{"Failed to remove "} + packageName.c_str() + "\n");
         }
       }
     }

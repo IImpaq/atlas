@@ -10,6 +10,8 @@
 
 #include <data/String.hpp>
 
+#include "core/Logger.hpp"
+
 extern const char *RED;
 extern const char *GREEN;
 extern const char *YELLOW;
@@ -30,8 +32,7 @@ static int ProcessCommand(const ntl::String &a_command, const ntl::String &a_pat
     if (pipe) {
         char buffer[128];
         while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-            if (a_verbose)
-                std::cout << "Debug: " << buffer << std::endl;
+            LOG_DEBUG(ntl::String{buffer} + "\n");
             output.Append(buffer);
         }
         exitCode = pclose(pipe);

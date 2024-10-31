@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "Logger.hpp"
+
 namespace atlas {
   fs::path Config::expandPath(const std::string &a_path) {
     if (a_path.empty() || a_path[0] != '~')
@@ -117,8 +119,9 @@ namespace atlas {
         m_config = toml::parse_file(m_config_path.string());
         loadFromTable();
       } catch (const toml::parse_error& err) {
-        std::cerr << "Error parsing config: " << err.description() << "\n"
-            << "Error at " << err.source().begin << "\n";
+        auto begin = err.source().begin;
+        LOG_ERROR(ntl::String{"Error parsing config: "} + err.description().data() + "\n"
+                  + "Error at " + static_cast<int>(begin.line) + ":" + static_cast<int>(begin.column) + "\n");
         // Keep defaults on error
       }
     } else {
@@ -136,7 +139,7 @@ namespace atlas {
       file << m_config;
       return true;
     } catch (const std::exception& e) {
-      std::cerr << "Error saving config: " << e.what() << "\n";
+      LOG_ERROR(ntl::String{"Error saving config: "} + e.what() + "\n");
       return false;
     }
   }

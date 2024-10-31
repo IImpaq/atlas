@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef NTL_JOB_SYSTEM_HPP
-#define NTL_JOB_SYSTEM_HPP
+#ifndef ATLAS_JOB_SYSTEM_HPP
+#define ATLAS_JOB_SYSTEM_HPP
 
 #include <functional>
 #include <thread>
@@ -82,4 +82,4 @@ namespace atlas {
   };
 }
 
-#endif // NTL_JOB_SYSTEM_HPP
+#endif // ATLAS_JOB_SYSTEM_HPP
