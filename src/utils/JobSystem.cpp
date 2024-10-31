@@ -30,7 +30,7 @@ namespace atlas {
     for(unsigned int i = 0; i < m_thread_count; ++i) {
       std::thread worker{
         [this]() {
-          while(m_initialized) {
+          while(true) {
             auto job = JobSystem::Instance().GetJobOrWait();
             job();
             --m_running_jobs;
