@@ -18,7 +18,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool verbose)
   : m_config(),
     m_repo_config_path(m_install_dir / "repositories.json"),
-    m_log_dir(m_install_dir / "logs") {
+    m_log_dir(m_install_dir / "logs"), m_repositories(), m_package_index() {
   // Use config values
   m_install_dir = m_config.GetPaths().install_dir;
   m_cache_dir = m_config.GetPaths().cache_dir;
@@ -33,7 +33,7 @@ Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool verbose)
 }
 
 bool Atlas::AddRepository(const ntl::String &a_name, const ntl::String &a_url, const ntl::String &a_branch) {
-  if (m_repositories.find(a_name) != m_repositories.end()) {
+  if (m_repositories.Find(a_name) != m_repositories.end()) {
     std::cerr << "Repository already exists\n";
     return false;
   }
@@ -45,11 +45,11 @@ bool Atlas::AddRepository(const ntl::String &a_name, const ntl::String &a_url, c
 }
 
 bool Atlas::RemoveRepository(const ntl::String &a_name) {
-  if (m_repositories.find(a_name) == m_repositories.end()) {
+  if (m_repositories.Find(a_name) == m_repositories.end()) {
     std::cerr << "Repository not found\n";
     return false;
   }
-  m_repositories.erase(a_name);
+  m_repositories.Remove(a_name);
   fs::remove_all(m_cache_dir / a_name.GetCString());
   saveRepositories();
   loadPackageIndex();
@@ -57,7 +57,7 @@ bool Atlas::RemoveRepository(const ntl::String &a_name) {
 }
 
 bool Atlas::EnableRepository(const ntl::String &a_name) {
-  if (m_repositories.find(a_name) == m_repositories.end())
+  if (m_repositories.Find(a_name) == m_repositories.end())
     return false;
   m_repositories[a_name].enabled = true;
   saveRepositories();
@@ -66,7 +66,7 @@ bool Atlas::EnableRepository(const ntl::String &a_name) {
 }
 
 bool Atlas::DisableRepository(const ntl::String &a_name) {
-  if (m_repositories.find(a_name) == m_repositories.end())
+  if (m_repositories.Find(a_name) == m_repositories.end())
     return false;
   m_repositories[a_name].enabled = false;
   saveRepositories();
@@ -75,7 +75,7 @@ bool Atlas::DisableRepository(const ntl::String &a_name) {
 }
 
 void Atlas::ListRepositories() {
-  for (const auto &[name, repo]: m_repositories) {
+  for (const auto &[name, repo] : m_repositories) {
     std::cout << name << " (" << (repo.enabled ? "enabled" : "disabled")
         << ")\n"
         << "  URL: " << repo.url << "\n"
@@ -138,7 +138,7 @@ bool Atlas::Fetch() {
 }
 
 bool Atlas::Install(const ntl::String &a_package_name) {
-  if (m_package_index.find(a_package_name) == m_package_index.end()) {
+  if (m_package_index.Find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return false;
   }
@@ -177,7 +177,7 @@ bool Atlas::Update() {
 }
 
 bool Atlas::Remove(const ntl::String &a_package_name) {
-  if (m_package_index.find(a_package_name) == m_package_index.end()) {
+  if (m_package_index.Find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return false;
   }
@@ -201,7 +201,7 @@ std::vector<ntl::String> Atlas::Search(const ntl::String &a_query) {
 }
 
 void Atlas::Info(const ntl::String &a_package_name) {
-  if (m_package_index.find(a_package_name) == m_package_index.end()) {
+  if (m_package_index.Find(a_package_name) == m_package_index.end()) {
     std::cerr << "Package not found\n";
     return;
   }
@@ -265,7 +265,7 @@ void Atlas::saveRepositories() {
 }
 
 void Atlas::loadPackageIndex() {
-  m_package_index.clear();
+  m_package_index.Clear();
   for (const auto &[name, repo]: m_repositories) {
     if (!repo.enabled)
       continue;
@@ -366,7 +366,7 @@ bool Atlas::fetchRepository(const Repository &a_repo) const {
 bool Atlas::installPackage(const PackageConfig &a_config) {
   // First install all dependencies
   for (const auto& dep : a_config.dependencies) {
-    if (m_package_index.find(dep) == m_package_index.end()) {
+    if (m_package_index.Find(dep) == m_package_index.end()) {
       std::cerr << "Unknown dependency " << dep << "\n";
       return false;
     }

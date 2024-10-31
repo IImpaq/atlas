@@ -12,7 +12,6 @@
 #include <iostream>
 #include <json/json.h>
 #include <string>
-#include <unordered_map>
 
 #include "Config.hpp"
 #include "pods/PackageConfig.hpp"
@@ -22,6 +21,8 @@
 
 #include <data/Array.hpp>
 #include <data/String.hpp>
+
+#include "data/Map.hpp"
 
 namespace fs = std::filesystem;
 
@@ -34,8 +35,8 @@ private:
   fs::path m_shortcut_dir;
   fs::path m_repo_config_path;
   fs::path m_log_dir;
-  std::unordered_map<ntl::String, Repository> m_repositories;
-  std::unordered_map<ntl::String, PackageConfig> m_package_index;
+  ntl::Map<ntl::String, Repository> m_repositories;
+  ntl::Map<ntl::String, PackageConfig> m_package_index;
 
 public:
   Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
