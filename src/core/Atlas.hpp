@@ -43,8 +43,7 @@ namespace atlas {
     Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
     ~Atlas();
 
-    bool AddRepository(const ntl::String &a_name, const ntl::String &a_url,
-                       const ntl::String &a_branch = "main");
+    bool AddRepository(const ntl::String &a_name, const ntl::String &a_url, const ntl::String &a_branch = "main");
 
     bool RemoveRepository(const ntl::String &a_name);
 
@@ -58,9 +57,13 @@ namespace atlas {
 
     bool Install(const ntl::String &a_package_name);
 
+    bool Remove(const ntl::String &a_package_name);
+
     bool Update();
 
-    bool Remove(const ntl::String &a_package_name);
+    bool LockPackage(const ntl::String& name);
+
+    bool UnlockPackage(const ntl::String& name);
 
     void Cleanup();
 
@@ -81,23 +84,15 @@ namespace atlas {
 
     bool installPackage(const PackageConfig &a_config);
 
+    bool removePackage(const PackageConfig &a_config);
+
     void recordInstallation(const PackageConfig &a_config);
 
     void recordRemoval(const PackageConfig &a_config);
 
     ntl::String getCurrentDateTime();
 
-    bool removePackage(const PackageConfig &a_config);
-
     bool isMacOS();
-
-    fs::path getDefaultShortcutDir();
-
-    void createShortcut(const ntl::String &a_repo);
-
-    void createMacOSShortcut(const ntl::String &a_repo);
-
-    void createLinuxShortcut(const ntl::String &a_repo);
 
     bool downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const;
 

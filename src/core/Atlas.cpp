@@ -162,6 +162,14 @@ namespace atlas {
     return installPackage(m_package_index[a_package_name]);
   }
 
+  bool Atlas::Remove(const ntl::String &a_package_name) {
+    if (m_package_index.Find(a_package_name) == m_package_index.end()) {
+      LOG_ERROR("Package not found\n");
+      return false;
+    }
+    return removePackage(m_package_index[a_package_name]);
+  }
+
   bool Atlas::Update() {
     bool success = true;
     fs::path dbPath = m_install_dir / "installed.json";
@@ -177,6 +185,12 @@ namespace atlas {
     for (const auto &[name, config]: m_package_index) {
       if (IsInstalled(name)) {
         ntl::String localVersion = root[name.GetCString()]["version"].asString().c_str();
+        bool isLocked = root[name.GetCString()]["locked"].asBool();
+
+        if (isLocked) {
+          continue;
+        }
+
         if (config.version != localVersion) {
           installedSomething = true;
           LOG_MSG("Updating " + name + " from version " + localVersion + " to " + config.version + "...\n");
@@ -192,12 +206,42 @@ namespace atlas {
     return success;
   }
 
-  bool Atlas::Remove(const ntl::String &a_package_name) {
-    if (m_package_index.Find(a_package_name) == m_package_index.end()) {
-      LOG_ERROR("Package not found\n");
+  bool Atlas::LockPackage(const ntl::String& name) {
+    fs::path dbPath = m_install_dir / "installed.json";
+    Json::Value root;
+
+    if (!IsInstalled(name)) {
+      LOG_ERROR("Package not installed\n");
       return false;
     }
-    return removePackage(m_package_index[a_package_name]);
+
+    if (fs::exists(dbPath)) {
+      std::ifstream dbFile(dbPath);
+      dbFile >> root;
+      root[name.GetCString()]["locked"] = true;
+      std::ofstream outFile(dbPath);
+      outFile << root;
+
+      LOG_MSG("Locked package " + name + "!\n");
+    }
+
+    return true;
+  }
+
+  bool Atlas::UnlockPackage(const ntl::String& name) {
+    fs::path dbPath = m_install_dir / "installed.json";
+    Json::Value root;
+
+    if (fs::exists(dbPath)) {
+      std::ifstream dbFile(dbPath);
+      dbFile >> root;
+      root[name.GetCString()]["locked"] = false;
+      std::ofstream outFile(dbPath);
+      outFile << root;
+      LOG_MSG("Unlocked package " + name + "!\n");
+    }
+
+    return true;
   }
 
   void Atlas::Cleanup() {
@@ -414,6 +458,24 @@ namespace atlas {
     return true;
   }
 
+  bool Atlas::removePackage(const PackageConfig &a_config) {
+    PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
+
+    LoadingAnimation loading("Removing " + a_config.name);
+
+    bool success = installer.Uninstall();
+
+    loading.Stop();
+
+    if (!success) {
+      LOG_ERROR("Removal failed for " + a_config.name + "\n");
+      return false;
+    }
+
+    recordRemoval(a_config);
+
+    return true;
+  }
 
   void Atlas::recordInstallation(const PackageConfig &a_config) {
     Json::Value root;
@@ -428,6 +490,7 @@ namespace atlas {
     package["version"] = a_config.version.GetCString();
     package["install_date"] = getCurrentDateTime().GetCString();
     package["repository"] = a_config.repository.GetCString();
+    package["locked"] = false;
 
     root[a_config.name.GetCString()] = package;
 
@@ -458,24 +521,6 @@ namespace atlas {
     return datetime;
   }
 
-  bool Atlas::removePackage(const PackageConfig &a_config) {
-    PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
-
-    LoadingAnimation loading("Removing " + a_config.name);
-
-    bool success = installer.Uninstall();
-
-    loading.Stop();
-
-    if (!success) {
-      LOG_ERROR("Removal failed for " + a_config.name + "\n");
-      return false;
-    }
-
-    recordRemoval(a_config);
-
-    return true;
-  }
 
   bool Atlas::isMacOS() {
   #ifdef __APPLE__
@@ -483,64 +528,6 @@ namespace atlas {
   #else
           return false;
   #endif
-  }
-
-  fs::path Atlas::getDefaultShortcutDir() {
-    fs::path homeDir = getenv("HOME");
-    return isMacOS()
-             ? homeDir / "Applications"
-             : homeDir / ".local/share/applications";
-  }
-
-  void Atlas::createShortcut(const ntl::String &a_repo) {
-    if (isMacOS()) {
-      createMacOSShortcut(a_repo);
-    } else {
-      createLinuxShortcut(a_repo);
-    }
-  }
-
-  void Atlas::createMacOSShortcut(const ntl::String &a_repo) {
-    fs::path appPath = m_shortcut_dir / (a_repo + ".app").GetCString();
-    fs::create_directories(appPath / "Contents/MacOS");
-
-    std::ofstream plist(appPath / "Contents/Info.plist");
-    plist << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" "
-        "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
-        << "<plist version=\"1.0\">\n"
-        << "<dict>\n"
-        << "    <key>CFBundleExecutable</key>\n"
-        << "    <string>" << a_repo << "</string>\n"
-        << "    <key>CFBundleIdentifier</key>\n"
-        << "    <string>com.atlas." << a_repo << "</string>\n"
-        << "    <key>CFBundleName</key>\n"
-        << "    <string>" << a_repo << "</string>\n"
-        << "    <key>CFBundlePackageType</key>\n"
-        << "    <string>APPL</string>\n"
-        << "    <key>CFBundleShortVersionString</key>\n"
-        << "    <string>1.0</string>\n"
-        << "</dict>\n"
-        << "</plist>";
-    plist.close();
-
-    fs::create_symlink(m_install_dir / a_repo.GetCString() / "main",
-                       appPath / "Contents/MacOS" / a_repo.GetCString());
-  }
-
-  void Atlas::createLinuxShortcut(const ntl::String &a_repo) {
-    fs::path shortcutPath = m_shortcut_dir / (a_repo + ".desktop").GetCString();
-    std::ofstream shortcut(shortcutPath);
-
-    shortcut << "[Desktop Entry]\n"
-        << "Name=" << a_repo << "\n"
-        << "Exec=" << (m_install_dir / a_repo.GetCString() / "main").string() << "\n"
-        << "Type=Application\n"
-        << "Terminal=false\n";
-
-    shortcut.close();
-    fs::permissions(shortcutPath, fs::perms::owner_all | fs::perms::group_read |
-                                  fs::perms::others_read);
   }
 
   bool Atlas::downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const {

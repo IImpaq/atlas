@@ -26,8 +26,10 @@ void printHelp(const char *progName) {
               << "\trepo-list                 List all repositories\n"
               << "\tfetch                     Fetch updates from repositories\n"
               << "\tinstall <package>         Install a package\n"
-              << "\tupdate                    Update installed packages\n"
               << "\tremove <package>          Remove a package\n"
+              << "\tupdate                    Update installed packages\n"
+              << "\tlock <package>            Lock a package\n"
+              << "\tunlock <package>          Unlock a package\n"
               << "\tcleanup                   Clean up unused packages\n"
               << "\tsearch <query>            Search for packages\n"
               << "\tinfo <package>            Show package information\n"
@@ -106,16 +108,32 @@ int main(int argc, char *argv[]) {
     return pm.Install(argv[2]) ? 0 : 1;
   }
 
-  if (command == "update") {
-    return pm.Update() ? 0 : 1;
-  }
-
   if (command == "remove") {
     if (argc != 3) {
       std::cout << RED << "Error: remove requires package name\n" << RESET;
       return 1;
     }
     return pm.Remove(argv[2]) ? 0 : 1;
+  }
+
+  if (command == "update") {
+    return pm.Update() ? 0 : 1;
+  }
+
+  if (command == "lock") {
+    if (argc != 3) {
+      std::cout << RED << "Error: lock requires package name\n" << RESET;
+      return 1;
+    }
+    return pm.LockPackage(argv[2]) ? 0 : 1;
+  }
+
+  if (command == "unlock") {
+    if (argc != 3) {
+      std::cout << RED << "Error: unlock requires package name\n" << RESET;
+      return 1;
+    }
+    return pm.UnlockPackage(argv[2]) ? 0 : 1;
   }
 
   if (command == "cleanup") {
