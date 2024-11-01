@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#ifndef ATLAS_CONFIG_HPP
+#define ATLAS_CONFIG_HPP
 
 #include <toml++/toml.h>
 #include <filesystem>
@@ -83,4 +83,4 @@ namespace atlas {
     };
 }
 
-#endif // CONFIG_HPP
+#endif // ATLAS_CONFIG_HPP

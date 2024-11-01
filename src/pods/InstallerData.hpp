@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef INSTALLER_DATA_HPP
-#define INSTALLER_DATA_HPP
+#ifndef ATLAS_INSTALLER_DATA_HPP
+#define ATLAS_INSTALLER_DATA_HPP
 
 #include <data/Map.hpp>
 
@@ -22,4 +22,4 @@ namespace atlas {
   };
 }
 
-#endif // INSTALLER_DATA_HPP
+#endif // ATLAS_INSTALLER_DATA_HPP

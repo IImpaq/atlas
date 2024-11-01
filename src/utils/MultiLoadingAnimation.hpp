@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef MULTI_LOADING_ANIMATION_HPP
-#define MULTI_LOADING_ANIMATION_HPP
+#ifndef ATLAS_MULTI_LOADING_ANIMATION_HPP
+#define ATLAS_MULTI_LOADING_ANIMATION_HPP
 
 #include <thread>
 #include <data/Map.hpp>
@@ -116,4 +116,4 @@ private:
 };
 
 
-#endif // MULTI_LOADING_ANIMATION_HPP
+#endif // ATLAS_MULTI_LOADING_ANIMATION_HPP

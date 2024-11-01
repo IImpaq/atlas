@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef FETCH_DATA_HPP
-#define FETCH_DATA_HPP
+#ifndef ATLAS_FETCH_DATA_HPP
+#define ATLAS_FETCH_DATA_HPP
 
 #include <data/Map.hpp>
 
@@ -20,4 +20,4 @@ namespace atlas {
   };
 }
 
-#endif // FETCH_DATA_HPP
+#endif // ATLAS_FETCH_DATA_HPP

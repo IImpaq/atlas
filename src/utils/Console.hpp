@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 
-#ifndef CONSOLE_HPP
-#define CONSOLE_HPP
+#ifndef ATLAS_CONSOLE_HPP
+#define ATLAS_CONSOLE_HPP
 
 #include <iostream>
 #include <data/String.hpp>
@@ -43,4 +43,4 @@ private:
 };
 
 
-#endif //CONSOLE_HPP
+#endif // ATLAS_CONSOLE_HPP
