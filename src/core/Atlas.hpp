@@ -13,17 +13,18 @@
 #include <json/json.h>
 #include <string>
 
-#include "Config.hpp"
-#include "pods/PackageConfig.hpp"
-#include "pods/Repository.hpp"
-#include "utils/LoadingAnimation.hpp"
-#include "core/PackageInstaller.hpp"
-
 #include <data/Array.hpp>
 #include <data/String.hpp>
+#include <data/Map.hpp>
 #include <os/Lock.hpp>
 
-#include "data/Map.hpp"
+#include "core/Config.hpp"
+#include "core/PackageInstaller.hpp"
+#include "pods/FetchData.hpp"
+#include "pods/PackageConfig.hpp"
+#include "pods/Repository.hpp"
+#include "pods/InstallerData.hpp"
+#include "utils/LoadingAnimation.hpp"
 #include "utils/MultiLoadingAnimation.hpp"
 
 namespace fs = std::filesystem;
@@ -33,21 +34,25 @@ namespace atlas {
   private:
     Config m_config;
 
-    fs::path m_install_dir;
-    fs::path m_cache_dir;
-    fs::path m_shortcut_dir;
-    fs::path m_repo_config_path;
-    fs::path m_log_dir;
-    ntl::Map<ntl::String, Repository> m_repositories;
-    ntl::Map<ntl::String, PackageConfig> m_package_index;
+    const fs::path m_install_dir;
+    const fs::path m_cache_dir;
+    const fs::path m_shortcut_dir;
+    const fs::path m_repo_config_path;
+    const fs::path m_log_dir;
 
-    ntl::Array<ntl::String> successful_installs;
-    ntl::Array<ntl::String> failed_installs;
-    ntl::Array<PackageConfig> configs;
-    ntl::Map<ntl::String, bool> scheduled;
-    std::atomic<bool> any_failure{false};
-    MultiLoadingAnimation loading;
-    ntl::Lock mutex;
+    MultiLoadingAnimation m_animator;
+
+    ntl::Map<ntl::String, Repository>     m_repositories;
+    ntl::SharedLock                       m_repositories_lock;
+
+    ntl::Map<ntl::String, PackageConfig>  m_package_index;
+    ntl::SharedLock                       m_package_index_lock;
+
+    FetchData       m_fetch_data;
+    ntl::SharedLock m_fetch_data_lock;
+
+    InstallerData   m_installer_data;
+    ntl::SharedLock m_installer_data_lock;
 
   public:
     Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);

@@ -19,16 +19,11 @@ namespace atlas {
   }
 
   Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool verbose)
-    : m_config(),
-      m_repo_config_path(m_install_dir / "repositories.json"),
+    : m_config(), m_install_dir(m_config.GetPaths().install_dir), m_cache_dir(m_config.GetPaths().cache_dir),
+      m_shortcut_dir(m_config.GetPaths().shortcut_dir), m_repo_config_path(m_install_dir / "repositories.json"),
       m_log_dir(m_install_dir / "logs"), m_repositories(), m_package_index() {
     JobSystem::Instance().Initialize(m_config.GetNetwork().max_parallel_downloads);
     Logger::Instance().Initialize();
-
-    // Use config values
-    m_install_dir = m_config.GetPaths().install_dir;
-    m_cache_dir = m_config.GetPaths().cache_dir;
-    m_shortcut_dir = m_config.GetPaths().shortcut_dir;
 
     fs::create_directories(m_install_dir);
     fs::create_directories(m_cache_dir);
@@ -94,167 +89,196 @@ namespace atlas {
 
   void Atlas::ListRepositories() {
     LOG_MSG("Local repositories:");
-    for (const auto &[name, repo] : m_repositories) {
+    for (const auto &[name, repo]: m_repositories) {
       LOG_MSG(name + " (" + (repo.enabled ? "enabled" : "disabled") + ")\n"
-                + "  URL: " + repo.url + "\n" + "  Branch: " + repo.branch);
+        + "  URL: " + repo.url + "\n" + "  Branch: " + repo.branch);
     }
   }
 
-bool Atlas::Fetch() {
+  bool Atlas::Fetch() {
     fs::path tempDir = m_cache_dir / "temp";
     fs::create_directories(tempDir);
 
     // Schedule repository fetching jobs
-    for (const auto &[name, repo] : m_repositories) {
-        if (!repo.enabled) {
-            continue;
+    m_repositories_lock.StartRead();
+    for (const auto &[name, repo]: m_repositories) {
+      if (!repo.enabled) {
+        continue;
+      }
+
+      JobSystem::Instance().AddJob([&, name, repo]() {
+        m_animator.UpdateStatus(name, "Fetching");
+
+        if (!fetchRepository(repo)) {
+          LOG_ERROR("Failed to fetch repository: " + name);
+          m_fetch_data_lock.StartWrite();
+          m_fetch_data.failed_fetchs.Insert(name);
+          m_fetch_data_lock.EndWrite();
+          m_animator.RemovePackage(name);
+          return;
         }
 
-        JobSystem::Instance().AddJob([&, name, repo]() {
-            loading.UpdateStatus(name, "Fetching");
+        m_animator.UpdateStatus(name, "Parsing");
+        fs::path repoPath = m_cache_dir / name.GetCString();
 
-            if (!fetchRepository(repo)) {
-                ntl::ScopeLock lock(&mutex);
-                LOG_ERROR("Failed to fetch repository: " + name);
-                any_failure = true;
-                loading.RemovePackage(name);
-                return;
+        if (fs::exists(repoPath / "packages.json")) {
+          try {
+            Json::Value root; {
+              std::ifstream index_file(repoPath / "packages.json");
+              index_file >> root;
             }
 
-            loading.UpdateStatus(name, "Parsing");
-            fs::path repoPath = m_cache_dir / name.GetCString();
+            std::vector<PackageConfig> configs;
+            for (const auto &package: root["packages"]) {
+              PackageConfig config{
+                package["name"].asString().c_str(),
+                package["version"].asString().c_str(),
+                package["description"].asString().c_str(),
+                package["build_command"].asString().c_str(),
+                package["install_command"].asString().c_str(),
+                package["uninstall_command"].asString().c_str(),
+                name,
+                ntl::Array<ntl::String>()
+              };
 
-            if (fs::exists(repoPath / "packages.json")) {
-                try {
-                    Json::Value root;
-                    {
-                        std::ifstream index_file(repoPath / "packages.json");
-                        index_file >> root;
-                    }
-
-                    std::vector<PackageConfig> configs;
-                    for (const auto &package : root["packages"]) {
-                        PackageConfig config{
-                            package["name"].asString().c_str(),
-                            package["version"].asString().c_str(),
-                            package["description"].asString().c_str(),
-                            package["build_command"].asString().c_str(),
-                            package["install_command"].asString().c_str(),
-                            package["uninstall_command"].asString().c_str(),
-                            name,
-                            ntl::Array<ntl::String>()
-                        };
-
-                        const Json::Value &deps = package["dependencies"];
-                        for (const auto &dep : deps) {
-                            config.dependencies.Insert(dep.asString().c_str());
-                        }
-                        configs.push_back(config);
-                    }
-
-                    // Add all configs at once to minimize lock time
-                    ntl::ScopeLock lock(&mutex);
-                    for (const auto &config : configs) {
-                        m_package_index[config.name] = config;
-                    }
-                } catch (const std::exception &e) {
-                    ntl::ScopeLock lock(&mutex);
-                    LOG_ERROR("Error parsing package index for " + name + ": " + e.what());
-                    any_failure = true;
-                }
+              const Json::Value &deps = package["dependencies"];
+              for (const auto &dep: deps) {
+                config.dependencies.Insert(dep.asString().c_str());
+              }
+              configs.push_back(config);
             }
 
-            loading.RemovePackage(name);
-        });
-    }
+            // Add all configs at once to minimize lock time
+            m_package_index_lock.StartWrite();
+            for (const auto &config: configs) {
+              m_package_index[config.name] = config;
+            }
+            m_package_index_lock.EndWrite();
+          } catch (const std::exception &e) {
+            LOG_ERROR("Error parsing package index for " + name + ": " + e.what());
+            m_fetch_data_lock.StartWrite();
+            m_fetch_data.failed_fetchs.Insert(name);
+            m_fetch_data_lock.EndWrite();
+          }
+        }
 
-    // Update the main package index with results
-    {
-        ntl::ScopeLock lock(&mutex);
-        m_package_index = std::move(m_package_index);
+        m_animator.RemovePackage(name);
+      });
     }
+    m_repositories_lock.EndRead();
+
+    JobSystem::Instance().WaitForJobsToFinish();
 
     fs::remove_all(tempDir);
-    return !any_failure;
-}
+
+    m_fetch_data_lock.StartRead();
+    bool result = m_fetch_data.failed_fetchs.IsEmpty();
+    m_fetch_data_lock.EndRead();
+
+    return result;
+  }
 
 
-  bool Atlas::Install(const ntl::Array<ntl::String>& a_package_names) {
+  bool Atlas::Install(const ntl::Array<ntl::String> &a_package_names) {
     // Validate all packages exist first
-    for (const auto& name : a_package_names) {
-        if (m_package_index.Find(name) == m_package_index.end()) {
-            LOG_ERROR("Package not found: " + name);
-            return false;
-        }
-        configs.Insert(m_package_index[name]);
+    m_installer_data_lock.StartWrite();
+    for (const auto &name: a_package_names) {
+      if (m_package_index.Find(name) == m_package_index.end()) {
+        LOG_ERROR("Package not found: " + name);
+        m_installer_data_lock.EndWrite();
+        return false;
+      }
+      m_installer_data.configs.Insert(m_package_index[name]);
     }
+    m_installer_data_lock.EndWrite();
 
     // Helper function to schedule package and its dependencies
-    std::function<void(const PackageConfig&)> schedulePackage =
-    [&](const PackageConfig& config) {
-        if (scheduled[config.name] || any_failure) {
-            return;
+    std::function<void(const PackageConfig &)> schedulePackage = [&](const PackageConfig &config) {
+      m_installer_data_lock.StartRead();
+      if (m_installer_data.scheduled[config.name] || !m_installer_data.failed_installs.IsEmpty()) {
+        m_installer_data_lock.EndRead();
+        m_installer_data_lock.StartWrite();
+        m_installer_data.skipped_installs.Insert(config.name);
+        m_installer_data_lock.EndWrite();
+        return;
+      }
+      m_installer_data_lock.EndRead();
+
+      // First schedule all dependencies
+      m_package_index_lock.StartRead();
+      for (const auto &dep: config.dependencies) {
+        if (m_package_index.Find(dep) == m_package_index.end()) {
+          m_package_index_lock.EndRead();
+          m_installer_data_lock.StartWrite();
+          m_installer_data.failed_installs.Insert(dep);
+          m_installer_data_lock.EndWrite();
+          LOG_ERROR("Unknown dependency " + dep);
+          return;
+        }
+        schedulePackage(m_package_index[dep]);
+      }
+      m_package_index_lock.EndRead();
+
+      m_installer_data_lock.StartWrite();
+      if (!m_installer_data.failed_installs.IsEmpty()) {
+        m_installer_data.skipped_installs.Insert(config.name);
+        m_installer_data_lock.EndWrite();
+        return;
+      }
+
+      m_installer_data.scheduled[config.name] = true;
+      m_installer_data_lock.EndWrite();
+
+      JobSystem::Instance().AddJob([&]() {
+        PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, config);
+
+        m_animator.UpdateStatus(config.name, "Downloading");
+        bool success = installer.Download();
+
+        if (success) {
+          m_animator.UpdateStatus(config.name, "Preparing");
+          success = installer.Prepare();
         }
 
-        // First schedule all dependencies
-        for (const auto& dep : config.dependencies) {
-            if (m_package_index.Find(dep) == m_package_index.end()) {
-                any_failure = true;
-                LOG_ERROR("Unknown dependency " + dep);
-                return;
-            }
-            schedulePackage(m_package_index[dep]);
+        if (success) {
+          m_animator.UpdateStatus(config.name, "Building");
+          success = installer.Build();
         }
 
-        if (any_failure) return;
+        if (success) {
+          m_animator.UpdateStatus(config.name, "Installing");
+          success = installer.Install();
+        }
 
-        scheduled[config.name] = true;
-        JobSystem::Instance().AddJob([&]() {
-          PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, config);
+        if (success) {
+          m_animator.UpdateStatus(config.name, "Cleaning");
+          success = installer.Cleanup();
+        }
 
-          loading.UpdateStatus(config.name, "Downloading");
-          bool success = installer.Download();
+        m_animator.RemovePackage(config.name);
 
-          if (success) {
-              loading.UpdateStatus(config.name, "Preparing");
-              success = installer.Prepare();
-          }
+        if (!success) {
+          LOG_ERROR("Installation failed for " + config.name);
+          m_installer_data_lock.StartWrite();
+          m_installer_data.failed_installs.Insert(config.name);
+          m_installer_data_lock.EndWrite();
+          return;
+        }
 
-          if (success) {
-              loading.UpdateStatus(config.name, "Building");
-              success = installer.Build();
-          }
-
-          if (success) {
-              loading.UpdateStatus(config.name, "Installing");
-              success = installer.Install();
-          }
-
-          if (success) {
-              loading.UpdateStatus(config.name, "Cleaning");
-              success = installer.Cleanup();
-          }
-
-          loading.RemovePackage(config.name);
-
-          if (!success) {
-              ntl::ScopeLock lock(&mutex);
-              LOG_ERROR("Installation failed for " + config.name);
-              any_failure = true;
-              return;
-          }
-
-          ntl::ScopeLock lock(&mutex);
-          recordInstallation(config);
-        });
+        m_installer_data_lock.StartWrite();
+        recordInstallation(config);
+        m_installer_data_lock.EndWrite();
+      });
     };
 
     // Schedule all packages and their dependencies
-    for (const auto& config : configs) {
-        schedulePackage(config);
+    for (const auto & config : m_installer_data.configs) {
+      schedulePackage(config);
     }
 
-    return !any_failure;
+    bool result = m_installer_data.failed_installs.IsEmpty();
+
+    return result;
   }
 
   bool Atlas::Install(const ntl::String &a_package_name) {
@@ -318,7 +342,7 @@ bool Atlas::Fetch() {
     return upgrade(m_package_index[a_package_name]);
   }
 
-  bool Atlas::LockPackage(const ntl::String& name) {
+  bool Atlas::LockPackage(const ntl::String &name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -340,7 +364,7 @@ bool Atlas::Fetch() {
     return true;
   }
 
-  bool Atlas::UnlockPackage(const ntl::String& name) {
+  bool Atlas::UnlockPackage(const ntl::String &name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -361,7 +385,7 @@ bool Atlas::Fetch() {
     cleanupPackages();
   }
 
-  bool Atlas::KeepPackage(const ntl::String& name) {
+  bool Atlas::KeepPackage(const ntl::String &name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -382,7 +406,7 @@ bool Atlas::Fetch() {
     return true;
   }
 
-  bool Atlas::UnkeepPackage(const ntl::String& name) {
+  bool Atlas::UnkeepPackage(const ntl::String &name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -417,11 +441,11 @@ bool Atlas::Fetch() {
 
     const auto &config = m_package_index[a_package_name];
     LOG_MSG("Name: " + config.name + "\n"
-        + "Version: " + config.version + "\n"
-        + "Description: " + config.description + "\n"
-        + "Status: " + (IsInstalled(a_package_name) ? GREEN : RED)
-        + (IsInstalled(a_package_name) ? "Installed" : "Not installed")
-       );
+      + "Version: " + config.version + "\n"
+      + "Description: " + config.description + "\n"
+      + "Status: " + (IsInstalled(a_package_name) ? GREEN : RED)
+      + (IsInstalled(a_package_name) ? "Installed" : "Not installed")
+    );
   }
 
   bool Atlas::IsInstalled(const ntl::String &a_package_name) const {
@@ -461,7 +485,7 @@ bool Atlas::Fetch() {
       if (fs::exists(bashrcPath)) {
         std::ifstream bashrcRead(bashrcPath);
         std::string content((std::istreambuf_iterator<char>(bashrcRead)),
-                           std::istreambuf_iterator<char>());
+                            std::istreambuf_iterator<char>());
 
         if (content.find(".local/bin:$PATH") == std::string::npos) {
           std::ofstream bashrc(bashrcPath, std::ios_base::app);
@@ -475,7 +499,7 @@ bool Atlas::Fetch() {
       if (fs::exists(zshrcPath)) {
         std::ifstream zshrcRead(zshrcPath);
         std::string content((std::istreambuf_iterator<char>(zshrcRead)),
-                           std::istreambuf_iterator<char>());
+                            std::istreambuf_iterator<char>());
 
         if (content.find(".local/bin:$PATH") == std::string::npos) {
           std::ofstream zshrc(zshrcPath, std::ios_base::app);
@@ -486,7 +510,7 @@ bool Atlas::Fetch() {
 
       LOG_INFO("Installation complete. Please restart your terminal or run 'source ~/.bashrc' (or ~/.zshrc)");
       return true;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
       LOG_ERROR("Installation failed: " + ntl::String(e.what()));
       return false;
     }
@@ -503,7 +527,7 @@ bool Atlas::Fetch() {
         return true;
       }
       return false;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
       LOG_ERROR("Uninstallation failed: " + ntl::String(e.what()));
       return false;
     }
@@ -620,7 +644,8 @@ bool Atlas::Fetch() {
     fs::create_directories(repoPath);
 
     ntl::String cmd = ntl::String{"unzip -o "} + zipPath.string().c_str() + " -d " + repoPath.string().c_str();
-    int extract_result = ProcessCommand(cmd, m_log_dir.string().c_str() + ntl::String{"/latest.log"}, m_config.GetCore().verbose);
+    int extract_result = ProcessCommand(cmd, m_log_dir.string().c_str() + ntl::String{"/latest.log"},
+                                        m_config.GetCore().verbose);
     fs::remove(zipPath);
 
     if (extract_result != 0) {
@@ -648,7 +673,7 @@ bool Atlas::Fetch() {
 
   bool Atlas::installPackage(const PackageConfig &a_config) {
     // First install all dependencies
-    for (const auto& dep : a_config.dependencies) {
+    for (const auto &dep: a_config.dependencies) {
       if (m_package_index.Find(dep) == m_package_index.end()) {
         LOG_ERROR("Unknown dependency " + dep);
         return false;
@@ -666,8 +691,8 @@ bool Atlas::Fetch() {
     LoadingAnimation loading(("Installing " + a_config.name).GetCString());
 
     bool success = installer.Download() && installer.Prepare() &&
-                  installer.Build() && installer.Install() &&
-                  installer.Cleanup();
+                   installer.Build() && installer.Install() &&
+                   installer.Cleanup();
 
     loading.Stop();
 
@@ -684,8 +709,6 @@ bool Atlas::Fetch() {
     PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
     bool success = installer.Uninstall();
-
-    loading.Stop();
 
     if (!success) {
       LOG_ERROR("Removal failed for " + a_config.name);
@@ -771,11 +794,11 @@ bool Atlas::Fetch() {
 
 
   bool Atlas::isMacOS() {
-  #ifdef __APPLE__
+#ifdef __APPLE__
     return true;
-  #else
+#else
           return false;
-  #endif
+#endif
   }
 
   bool Atlas::downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const {
@@ -825,15 +848,15 @@ bool Atlas::Fetch() {
 
     // Create a set of all dependencies
     std::set<ntl::String> allDependencies;
-    for (const auto& packageName : root.getMemberNames()) {
-      const auto& deps = root[packageName]["dependencies"];
-      for (const auto& dep : deps) {
+    for (const auto &packageName: root.getMemberNames()) {
+      const auto &deps = root[packageName]["dependencies"];
+      for (const auto &dep: deps) {
         allDependencies.insert(dep.asString().c_str());
       }
     }
 
     // Check each installed package
-    for (const auto& packageName : root.getMemberNames()) {
+    for (const auto &packageName: root.getMemberNames()) {
       // Skip if package is a dependency of another package
       if (allDependencies.contains(packageName.c_str())) {
         continue;

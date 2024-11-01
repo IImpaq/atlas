@@ -26,7 +26,7 @@ bool hasVerboseFlag(int argc, char *argv[]) {
 struct Command {
     ntl::String description;
     int requiredArgs;
-    std::function<int(atlas::Atlas&, const ntl::Array<ntl::String>&)> handler;
+    std::function<bool(atlas::Atlas&, const ntl::Array<ntl::String>&)> handler;
 };
 
 void printHelp(const char* progName) {
@@ -68,7 +68,7 @@ const std::map<ntl::String, Command> COMMANDS = {
     {"repo-disable", {"Disable a repository", 1,
         [](atlas::Atlas& pm, const auto& args) { return pm.DisableRepository(args[0]); }}},
     {"repo-list", {"List all repositories", 0,
-        [](atlas::Atlas& pm, const auto&) { pm.ListRepositories(); return 0; }}},
+        [](atlas::Atlas& pm, const auto&) { pm.ListRepositories(); return true; }}},
     {"fetch", {"Fetch updates", 0,
         [](atlas::Atlas& pm, const auto&) { return pm.Fetch(); }}},
     {"install", {"Install a package", -1,
@@ -84,7 +84,7 @@ const std::map<ntl::String, Command> COMMANDS = {
     {"unlock", {"Unlock a package version", 1,
         [](atlas::Atlas& pm, const auto& args) { return pm.UnlockPackage(args[0]); }}},
     {"cleanup", {"Clean unused packages", 0,
-        [](atlas::Atlas& pm, const auto&) { pm.Cleanup(); return 0; }}},
+        [](atlas::Atlas& pm, const auto&) { pm.Cleanup(); return true; }}},
     {"keep", {"Keep a package", 1,
         [](atlas::Atlas& pm, const auto& args) { return pm.KeepPackage(args[0]); }}},
     {"unkeep", {"Unkeep a package", 1,
@@ -93,10 +93,10 @@ const std::map<ntl::String, Command> COMMANDS = {
         [](atlas::Atlas& pm, const auto& args) {
             auto results = pm.Search(args[0]);
             for (const auto& result : results) std::cout << result << "\n";
-            return 0;
+            return true;
         }}},
     {"info", {"Show package information", 1,
-        [](atlas::Atlas& pm, const auto& args) { pm.Info(args[0]); return 0; }}},
+        [](atlas::Atlas& pm, const auto& args) { pm.Info(args[0]); return true; }}},
     {"self-setup", {"Setup atlas to be globally accessible", 0,
         [](atlas::Atlas& pm, const auto& args) { return pm.AtlasSetup(); }}},
     {"self-purge", {"Get rid of atlas again", 0,
@@ -149,12 +149,15 @@ int main(int argc, char* argv[]) {
             args.Insert(argv[i]);
         }
 
-        int result = cmd.handler(pm, args);
+        bool result = cmd.handler(pm, args);
 
-        if (result == 0) {
+        if (result) {
             LOG_INFO("Command completed successfully");
+            return 0;
+        } else {
+            LOG_ERROR("Command failed");
+            return 1;
         }
-        return result;
     } catch (const std::exception& e) {
         LOG_ERROR(e.what());
         return 1;
