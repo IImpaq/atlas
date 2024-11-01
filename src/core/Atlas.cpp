@@ -272,7 +272,7 @@ namespace atlas {
     };
 
     // Schedule all packages and their dependencies
-    for (const auto & config : m_installer_data.configs) {
+    for (const auto &config: m_installer_data.configs) {
       schedulePackage(config);
     }
 
@@ -298,7 +298,6 @@ namespace atlas {
   }
 
   bool Atlas::Update() {
-    bool success = true;
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -307,28 +306,95 @@ namespace atlas {
       dbFile >> root;
     }
 
-    bool installedSomething = false;
-
+    m_installer_data_lock.StartWrite();
     for (const auto &[name, config]: m_package_index) {
-      if (IsInstalled(name)) {
-        ntl::String localVersion = root[name.GetCString()]["version"].asString().c_str();
-        bool isLocked = root[name.GetCString()]["locked"].asBool();
+      m_installer_data.configs.Insert(config);
+    }
+    m_installer_data_lock.EndWrite();
 
-        if (isLocked) {
-          continue;
-        }
-
-        if (config.version != localVersion) {
-          installedSomething = true;
-          LOG_MSG("Updating " + name + " from version " + localVersion + " to " + config.version + "...");
-          success &= installPackage(config);
-        }
+    // Helper function to schedule package update
+    std::function<void(const PackageConfig &)> scheduleUpdate = [&](const PackageConfig &config) {
+      m_installer_data_lock.StartRead();
+      if (m_installer_data.scheduled[config.name] || !m_installer_data.failed_installs.IsEmpty()) {
+        m_installer_data_lock.EndRead();
+        m_installer_data_lock.StartWrite();
+        m_installer_data.skipped_installs.Insert(config.name);
+        m_installer_data_lock.EndWrite();
+        return;
       }
+      m_installer_data_lock.EndRead();
+
+      m_installer_data_lock.StartWrite();
+      m_installer_data.scheduled[config.name] = true;
+      m_installer_data_lock.EndWrite();
+
+      JobSystem::Instance().AddJob([&, root]() {
+        if (IsInstalled(config.name)) {
+          ntl::String localVersion = root[config.name.GetCString()]["version"].asString().c_str();
+          bool isLocked = root[config.name.GetCString()]["locked"].asBool();
+
+          if (!isLocked && config.version != localVersion) {
+            LOG_MSG("Updating " + config.name + " from version " + localVersion + " to " + config.version + "...");
+
+            PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, config);
+
+            m_animator.UpdateStatus(config.name, "Downloading");
+            bool packageSuccess = installer.Download();
+
+            if (packageSuccess) {
+              m_animator.UpdateStatus(config.name, "Preparing");
+              packageSuccess = installer.Prepare();
+            }
+
+            if (packageSuccess) {
+              m_animator.UpdateStatus(config.name, "Building");
+              packageSuccess = installer.Build();
+            }
+
+            if (packageSuccess) {
+              m_animator.UpdateStatus(config.name, "Installing");
+              packageSuccess = installer.Install();
+            }
+
+            if (packageSuccess) {
+              m_animator.UpdateStatus(config.name, "Cleaning");
+              packageSuccess = installer.Cleanup();
+            }
+
+            m_animator.RemovePackage(config.name);
+
+            if (!packageSuccess) {
+              LOG_ERROR("Update failed for " + config.name);
+              m_installer_data_lock.StartWrite();
+              m_installer_data.failed_installs.Insert(config.name);
+              m_installer_data_lock.EndWrite();
+              return;
+            }
+
+            m_installer_data_lock.StartWrite();
+            m_installer_data.successful_installs.Insert(config.name);
+            recordInstallation(config);
+            m_installer_data_lock.EndWrite();
+          }
+        }
+      });
+    };
+
+    // Schedule updates for all packages
+    for (const auto &config: m_installer_data.configs) {
+      scheduleUpdate(config);
     }
 
-    if (!installedSomething) {
-      LOG_MSG("No updates found");
+    // Wait for all jobs to complete
+    JobSystem::Instance().WaitForJobsToFinish();
+
+    m_installer_data_lock.StartRead();
+    if (m_installer_data.successful_installs.IsEmpty()) {
+      LOG_WARN("No updates found");
     }
+
+    bool success = m_installer_data.failed_installs.IsEmpty();
+    m_installer_data_lock.EndRead();
 
     return success;
   }
@@ -671,40 +737,6 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::installPackage(const PackageConfig &a_config) {
-    // First install all dependencies
-    for (const auto &dep: a_config.dependencies) {
-      if (m_package_index.Find(dep) == m_package_index.end()) {
-        LOG_ERROR("Unknown dependency " + dep);
-        return false;
-      }
-
-      PackageConfig dep_config = m_package_index[dep];
-      if (!installPackage(dep_config)) {
-        LOG_ERROR("Failed to install dependency: " + dep);
-        return false;
-      }
-    }
-
-    // Then proceed with the main package installation
-    PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
-    LoadingAnimation loading(("Installing " + a_config.name).GetCString());
-
-    bool success = installer.Download() && installer.Prepare() &&
-                   installer.Build() && installer.Install() &&
-                   installer.Cleanup();
-
-    loading.Stop();
-
-    if (!success) {
-      LOG_ERROR("Installation failed for " + a_config.name);
-      return false;
-    }
-
-    recordInstallation(a_config);
-    return true;
-  }
-
   bool Atlas::removePackage(const PackageConfig &a_config) {
     PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
@@ -775,7 +807,7 @@ namespace atlas {
 
       if (a_config.version != localVersion) {
         LOG_MSG("Updating " + a_config.name + " from version " + localVersion + " to " + a_config.version + "...");
-        success &= installPackage(a_config);
+        success &= Install({a_config.name});
       } else {
         LOG_MSG("No update found");
       }

@@ -109,8 +109,6 @@ namespace atlas {
 
     bool fetchRepository(const Repository &a_repo) const;
 
-    bool installPackage(const PackageConfig &a_config);
-
     bool removePackage(const PackageConfig &a_config);
 
     void recordInstallation(const PackageConfig &a_config);
