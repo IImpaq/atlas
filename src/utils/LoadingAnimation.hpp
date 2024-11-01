@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 28.10.24.
-//
+/**
+* @file LoadingAnimation.hpp
+* @author Marcus Gugacs
+* @date 28.10.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #ifndef ATLAS_LOADING_ANIMATION_HPP
 #define ATLAS_LOADING_ANIMATION_HPP

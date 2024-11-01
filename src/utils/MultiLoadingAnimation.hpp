@@ -1,9 +1,13 @@
-//
-// Created by Marcus Gugacs on 01.11.24.
-//
+/**
+* @file MultiLoadingAnimation.hpp
+* @author Marcus Gugacs
+* @date 01.11.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
-#ifndef MULTILOADINGANIMATION_HPP
-#define MULTILOADINGANIMATION_HPP
+#ifndef MULTI_LOADING_ANIMATION_HPP
+#define MULTI_LOADING_ANIMATION_HPP
+
 #include <thread>
 #include <data/Map.hpp>
 #include <os/Lock.hpp>
@@ -112,4 +116,4 @@ private:
 };
 
 
-#endif //MULTILOADINGANIMATION_HPP
+#endif // MULTI_LOADING_ANIMATION_HPP

@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 01.11.24.
-//
+/**
+* @file Console.hpp
+* @author Marcus Gugacs
+* @date 01.11.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #ifndef CONSOLE_HPP
 #define CONSOLE_HPP

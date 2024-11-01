@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 28.10.24.
-//
+/**
+* @file Atlas.hpp
+* @author Marcus Gugacs
+* @date 28.10.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #ifndef ATLAS_ATLAS_HPP
 #define ATLAS_ATLAS_HPP

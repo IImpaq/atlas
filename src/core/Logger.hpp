@@ -1,7 +1,7 @@
 /**
 * @file Logger.hpp
 * @author Marcus Gugacs
-* @date 10/31/2024
+* @date 31.10.2024
 * @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
 */
 

@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 28.10.24.
-//
+/**
+* @file Repository.hpp
+* @author Marcus Gugacs
+* @date 28.10.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #ifndef ATLAS_REPOSITORY_HPP
 #define ATLAS_REPOSITORY_HPP

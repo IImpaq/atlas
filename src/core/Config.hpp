@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 30.10.24.
-//
+/**
+* @file Config.hpp
+* @author Marcus Gugacs
+* @date 30.10.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #ifndef CONFIG_HPP
 #define CONFIG_HPP

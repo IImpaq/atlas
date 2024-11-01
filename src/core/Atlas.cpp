@@ -1,6 +1,9 @@
-//
-// Created by Marcus Gugacs on 28.10.24.
-//
+/**
+* @file Atlas.cpp
+* @author Marcus Gugacs
+* @date 28.10.24
+* @copyright Copyright (c) 2024 Marcus Gugacs. All rights reserved.
+*/
 
 #include "Atlas.hpp"
 
@@ -89,7 +92,7 @@ namespace atlas {
 
   void Atlas::ListRepositories() {
     LOG_MSG("Local repositories:");
-    for (const auto &[name, repo]: m_repositories) {
+    for (const auto &[name, repo] : m_repositories) {
       LOG_MSG(name + " (" + (repo.enabled ? "enabled" : "disabled") + ")\n"
         + "  URL: " + repo.url + "\n" + "  Branch: " + repo.branch);
     }
@@ -101,7 +104,7 @@ namespace atlas {
 
     // Schedule repository fetching jobs
     m_repositories_lock.StartRead();
-    for (const auto &[name, repo]: m_repositories) {
+    for (const auto &[name, repo] : m_repositories) {
       if (!repo.enabled) {
         continue;
       }
@@ -129,7 +132,7 @@ namespace atlas {
             }
 
             std::vector<PackageConfig> configs;
-            for (const auto &package: root["packages"]) {
+            for (const auto &package : root["packages"]) {
               PackageConfig config{
                 package["name"].asString().c_str(),
                 package["version"].asString().c_str(),
@@ -142,7 +145,7 @@ namespace atlas {
               };
 
               const Json::Value &deps = package["dependencies"];
-              for (const auto &dep: deps) {
+              for (const auto &dep : deps) {
                 config.dependencies.Insert(dep.asString().c_str());
               }
               configs.push_back(config);
@@ -150,7 +153,7 @@ namespace atlas {
 
             // Add all configs at once to minimize lock time
             m_package_index_lock.StartWrite();
-            for (const auto &config: configs) {
+            for (const auto &config : configs) {
               m_package_index[config.name] = config;
             }
             m_package_index_lock.EndWrite();
@@ -182,7 +185,7 @@ namespace atlas {
   bool Atlas::Install(const ntl::Array<ntl::String> &a_package_names) {
     // Validate all packages exist first
     m_installer_data_lock.StartWrite();
-    for (const auto &name: a_package_names) {
+    for (const auto &name : a_package_names) {
       if (m_package_index.Find(name) == m_package_index.end()) {
         LOG_ERROR("Package not found: " + name);
         m_installer_data_lock.EndWrite();
@@ -206,7 +209,7 @@ namespace atlas {
 
       // First schedule all dependencies
       m_package_index_lock.StartRead();
-      for (const auto &dep: config.dependencies) {
+      for (const auto &dep : config.dependencies) {
         if (m_package_index.Find(dep) == m_package_index.end()) {
           m_package_index_lock.EndRead();
           m_installer_data_lock.StartWrite();
@@ -272,7 +275,7 @@ namespace atlas {
     };
 
     // Schedule all packages and their dependencies
-    for (const auto &config: m_installer_data.configs) {
+    for (const auto &config : m_installer_data.configs) {
       schedulePackage(config);
     }
 
@@ -307,7 +310,7 @@ namespace atlas {
     }
 
     m_installer_data_lock.StartWrite();
-    for (const auto &[name, config]: m_package_index) {
+    for (const auto &[name, config] : m_package_index) {
       m_installer_data.configs.Insert(config);
     }
     m_installer_data_lock.EndWrite();
@@ -381,7 +384,7 @@ namespace atlas {
     };
 
     // Schedule updates for all packages
-    for (const auto &config: m_installer_data.configs) {
+    for (const auto &config : m_installer_data.configs) {
       scheduleUpdate(config);
     }
 
@@ -491,7 +494,7 @@ namespace atlas {
   std::vector<ntl::String> Atlas::Search(const ntl::String &a_query) {
     std::vector<ntl::String> results;
     std::string str;
-    for (const auto &[name, config]: m_package_index) {
+    for (const auto &[name, config] : m_package_index) {
       if (name.Find(a_query) != -1 || config.description.Find(a_query) != -1) {
         results.push_back(name);
       }
@@ -609,7 +612,7 @@ namespace atlas {
     std::ifstream config_file(m_repo_config_path);
     config_file >> root;
 
-    for (const auto &repo: root["repositories"]) {
+    for (const auto &repo : root["repositories"]) {
       Repository r{
         repo["name"].asString().c_str(), repo["url"].asString().c_str(),
         repo["branch"].asString().c_str(), repo["enabled"].asBool()
@@ -622,7 +625,7 @@ namespace atlas {
     Json::Value root;
     Json::Value repoArray(Json::arrayValue);
 
-    for (const auto &[name, repo]: m_repositories) {
+    for (const auto &[name, repo] : m_repositories) {
       Json::Value repoObj;
       repoObj["name"] = repo.name.GetCString();
       repoObj["url"] = repo.url.GetCString();
@@ -638,12 +641,12 @@ namespace atlas {
 
   void Atlas::loadPackageIndex() {
     m_package_index.Clear();
-    for (const auto &[name, repo]: m_repositories) {
+    for (const auto &[name, repo] : m_repositories) {
       if (!repo.enabled)
         continue;
 
       fs::path repoPath = m_cache_dir / name.GetCString();
-      for (const auto &entry: fs::recursive_directory_iterator(repoPath)) {
+      for (const auto &entry : fs::recursive_directory_iterator(repoPath)) {
         if (entry.path().filename() == "package.json") {
           Json::Value root;
           std::ifstream config_file(entry.path());
@@ -720,7 +723,7 @@ namespace atlas {
     }
 
     fs::path nested_dir;
-    for (const auto &entry: fs::directory_iterator(repoPath)) {
+    for (const auto &entry : fs::directory_iterator(repoPath)) {
       if (fs::is_directory(entry)) {
         nested_dir = entry.path();
         break;
@@ -728,7 +731,7 @@ namespace atlas {
     }
 
     if (!nested_dir.empty()) {
-      for (const auto &entry: fs::directory_iterator(nested_dir)) {
+      for (const auto &entry : fs::directory_iterator(nested_dir)) {
         fs::rename(entry.path(), repoPath / entry.path().filename());
       }
       fs::remove_all(nested_dir);
@@ -880,15 +883,15 @@ namespace atlas {
 
     // Create a set of all dependencies
     std::set<ntl::String> allDependencies;
-    for (const auto &packageName: root.getMemberNames()) {
+    for (const auto &packageName : root.getMemberNames()) {
       const auto &deps = root[packageName]["dependencies"];
-      for (const auto &dep: deps) {
+      for (const auto &dep : deps) {
         allDependencies.insert(dep.asString().c_str());
       }
     }
 
     // Check each installed package
-    for (const auto &packageName: root.getMemberNames()) {
+    for (const auto &packageName : root.getMemberNames()) {
       // Skip if package is a dependency of another package
       if (allDependencies.contains(packageName.c_str())) {
         continue;
