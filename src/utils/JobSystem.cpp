@@ -13,10 +13,11 @@
 using namespace ntl;
 
 namespace atlas {
-  void JobSystem::Initialize() {
-    m_thread_count = std::thread::hardware_concurrency();
+  void JobSystem::Initialize(ntl::Size a_thread_count) {
+    m_thread_count = a_thread_count;
     m_running_jobs = 0;
     m_initialized = true;
+
     initThreadPool();
   }
 

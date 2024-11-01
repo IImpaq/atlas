@@ -21,8 +21,10 @@
 
 #include <data/Array.hpp>
 #include <data/String.hpp>
+#include <os/Lock.hpp>
 
 #include "data/Map.hpp"
+#include "utils/MultiLoadingAnimation.hpp"
 
 namespace fs = std::filesystem;
 
@@ -39,6 +41,14 @@ namespace atlas {
     ntl::Map<ntl::String, Repository> m_repositories;
     ntl::Map<ntl::String, PackageConfig> m_package_index;
 
+    ntl::Array<ntl::String> successful_installs;
+    ntl::Array<ntl::String> failed_installs;
+    ntl::Array<PackageConfig> configs;
+    ntl::Map<ntl::String, bool> scheduled;
+    std::atomic<bool> any_failure{false};
+    MultiLoadingAnimation loading;
+    ntl::Lock mutex;
+
   public:
     Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
     ~Atlas();
@@ -54,6 +64,8 @@ namespace atlas {
     void ListRepositories();
 
     bool Fetch();
+
+    bool Install(const ntl::Array<ntl::String>& a_package_names);
 
     bool Install(const ntl::String &a_package_name);
 

@@ -1,0 +1,96 @@
+//
+// Created by Marcus Gugacs on 01.11.24.
+//
+
+#ifndef MULTILOADINGANIMATION_HPP
+#define MULTILOADINGANIMATION_HPP
+#include <thread>
+#include <data/Map.hpp>
+#include <os/Lock.hpp>
+#include <os/ScopeLock.hpp>
+
+#include "Console.hpp"
+#include "Misc.hpp"
+
+class MultiLoadingAnimation {
+public:
+  MultiLoadingAnimation() : m_running(true) {
+    m_animator = std::thread(&MultiLoadingAnimation::animate, this);
+  }
+
+  // Add destructor
+  ~MultiLoadingAnimation() {
+    Stop();  // Ensure thread is stopped and joined
+  }
+
+  MultiLoadingAnimation(const MultiLoadingAnimation&) = delete;
+  MultiLoadingAnimation& operator=(const MultiLoadingAnimation&) = delete;
+
+  void UpdateStatus(const ntl::String& package_name, const ntl::String& status) {
+    ntl::ScopeLock lock(&m_mutex);
+    m_package_status[package_name] = status;
+    m_package_frames[package_name] = 0;
+  }
+
+  void RemovePackage(const ntl::String& package_name) {
+    ntl::ScopeLock lock(&m_mutex);
+    m_package_status.Remove(package_name);
+    m_package_frames.Remove(package_name);
+  }
+
+  void Stop() {
+    if (m_running) {
+      m_running = false;
+      if (m_animator.joinable()) {
+        m_animator.join();
+      }
+      // Clear all lines one final time
+      for (size_t i = 0; i < m_last_line_count; ++i) {
+        std::cout << "\033[A" << "\033[2K";
+      }
+      Console::GetInstance().PrintLine("");
+    }
+  }
+
+private:
+  static constexpr const char* DEFAULT_FRAMES[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+  static constexpr int FRAME_DELAY_MS = 100;
+
+  std::atomic<bool> m_running;
+  std::thread m_animator;
+  ntl::Lock m_mutex;
+  ntl::Map<ntl::String, ntl::String> m_package_status;
+  ntl::Map<ntl::String, int> m_package_frames;
+  size_t m_last_line_count{0};
+
+  void animate() {
+    while (m_running) {
+      ntl::String status;
+      size_t line_count = 0;
+      {
+        ntl::ScopeLock lock(&m_mutex);
+        for (const auto& [pkg, state] : m_package_status) {
+          status += ntl::String{CYAN} + pkg + ": " + YELLOW + state +
+                   RESET + " " + DEFAULT_FRAMES[m_package_frames[pkg]] + "\n";
+          m_package_frames[pkg] = (m_package_frames[pkg] + 1) % std::size(DEFAULT_FRAMES);
+          line_count++;
+        }
+      }
+
+      if (!status.IsEmpty()) {
+        // Move cursor up by last line count and clear lines
+        for (size_t i = 0; i < m_last_line_count; ++i) {
+          std::cout << "\033[A" << "\033[2K";
+        }
+
+        Console::GetInstance().UpdateProgress(status);
+      }
+      m_last_line_count = line_count;
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DELAY_MS));
+    }
+  }
+};
+
+
+#endif //MULTILOADINGANIMATION_HPP

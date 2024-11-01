@@ -38,7 +38,7 @@ namespace atlas {
     /**
      * @brief Initializes the job system (singleton).
      */
-    void Initialize();
+    void Initialize(ntl::Size a_thread_count = std::thread::hardware_concurrency());
     /**
      * @brief Shuts down the job system (singleton).
      */

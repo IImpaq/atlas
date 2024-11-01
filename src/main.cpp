@@ -53,7 +53,7 @@ void printHelp(const char* progName) {
               << "  cleanup                    Remove unused packages\n\n"
               << YELLOW << "Atlas Management:" << RESET << "\n"
               << "  self-setup                 Setup atlas to be globally accessible\n"
-              << "  self-purge                 Get rid of atlas again\n"
+              << "  self-purge                 Get rid of atlas again\n\n"
               << YELLOW << "Options:" << RESET << "\n"
               << "  -v, --verbose              Enable verbose output\n\n";
 }
@@ -71,8 +71,8 @@ const std::map<ntl::String, Command> COMMANDS = {
         [](atlas::Atlas& pm, const auto&) { pm.ListRepositories(); return 0; }}},
     {"fetch", {"Fetch updates", 0,
         [](atlas::Atlas& pm, const auto&) { return pm.Fetch(); }}},
-    {"install", {"Install a package", 1,
-        [](atlas::Atlas& pm, const auto& args) { return pm.Install(args[0]); }}},
+    {"install", {"Install a package", -1,
+        [](atlas::Atlas& pm, const auto& args) { return pm.Install(args); }}},
     {"remove", {"Remove a package", 1,
         [](atlas::Atlas& pm, const auto& args) { return pm.Remove(args[0]); }}},
     {"update", {"Update all packages", 0,
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
     const Command& cmd = cmdIt->second;
     int providedArgs = argc - 2;
 
-    if (providedArgs != cmd.requiredArgs) {
+    if (cmd.requiredArgs != -1 && providedArgs != cmd.requiredArgs) {
         LOG_ERROR("'" + command + ntl::String("' requires ") + cmd.requiredArgs + " argument(s)");
         return 1;
     }
