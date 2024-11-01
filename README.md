@@ -83,5 +83,5 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## ⚠️ Disclaimer
 
-This project is highly unstable, work in progress and may & will things. Use at your own risk.
+This project is highly unstable, work in progress and may & will break things. Use at your own risk.
  
