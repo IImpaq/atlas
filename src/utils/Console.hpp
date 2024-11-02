@@ -14,33 +14,47 @@
 #include <os/Lock.hpp>
 #include <os/ScopeLock.hpp>
 
-class Console {
-public:
-  static Console& GetInstance() {
-    static Console instance;
-    return instance;
-  }
+namespace atlas {
+  /**
+   * @class Console
+   * @brief A singleton class responsible for handling console output.
+   *
+   * The Console class provides methods for printing lines, updating progress,
+   * and clearing the current line. It uses a mutex to ensure thread-safety.
+   */
+  class Console {
+  private:
+    ntl::Lock m_mutex;
+  public:
+    /**
+     * @brief Gets the singleton instance of the Console class.
+     *
+     * @return A reference to the singleton Console instance
+     */
+    static Console& GetInstance();
 
-  void PrintLine(const ntl::String& message) {
-    ntl::ScopeLock lock(&m_mutex);
-    ClearCurrentLine();
-    std::cout << message.GetCString() << std::endl;
-  }
+    /**
+     * @brief Prints a line to the console.
+     *
+     * @param message The text to print (must not be null)
+     */
+    void PrintLine(const ntl::String& message);
 
-  void UpdateProgress(const ntl::String& message) {
-    ntl::ScopeLock lock(&m_mutex);
-    ClearCurrentLine();
-    std::cout << message.GetCString() << std::flush;
-  }
+    /**
+     * @brief Updates the progress indicator in the console.
+     *
+     * @param message The new progress text (must not be null)
+     */
+    void UpdateProgress(const ntl::String& message);
 
-private:
-  Console() = default;
-  ntl::Lock m_mutex;
+  private:
+    Console() = default;
 
-  void ClearCurrentLine() {
-    std::cout << "\r" << std::string(120, ' ') << "\r"; // Use a reasonable max width
-  }
-};
-
+    /**
+     * @brief Clears the current line from the console.
+     */
+    void ClearCurrentLine();
+  };
+}
 
 #endif // ATLAS_CONSOLE_HPP

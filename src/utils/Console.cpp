@@ -6,3 +6,26 @@
 */
 
 #include "Console.hpp"
+
+namespace atlas {
+  Console& Console::GetInstance() {
+    static Console instance;
+    return instance;
+  }
+
+  void Console::PrintLine(const ntl::String& message) {
+    ntl::ScopeLock lock(&m_mutex);
+    ClearCurrentLine();
+    std::cout << message.GetCString() << std::endl;
+  }
+
+  void Console::UpdateProgress(const ntl::String& message) {
+    ntl::ScopeLock lock(&m_mutex);
+    ClearCurrentLine();
+    std::cout << message.GetCString() << std::flush;
+  }
+
+  void Console::ClearCurrentLine() {
+    std::cout << "\r" << std::string(120, ' ') << "\r"; // Use a reasonable max width
+  }
+}

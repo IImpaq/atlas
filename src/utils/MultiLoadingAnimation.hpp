@@ -16,104 +16,89 @@
 #include "Console.hpp"
 #include "Misc.hpp"
 
-class MultiLoadingAnimation {
-public:
-  MultiLoadingAnimation() : m_running(true) {
-    m_animator = std::thread(&MultiLoadingAnimation::animate, this);
-  }
+namespace atlas {
+  /**
+   * @class MultiLoadingAnimation
+   * @brief A multi-loading animation class that can be used to display a loading animation on the console.
+   *
+   * This class is designed to be used in conjunction with other classes and functions that update package statuses,
+   * allowing for a smooth and interactive loading animation experience. It uses multiple threads and synchronization primitives
+   * to ensure thread safety and minimize performance impact.
+   */
+  class MultiLoadingAnimation {
+  private:
+    static constexpr const char* DEFAULT_FRAMES[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+    static constexpr int FRAME_DELAY_MS = 100;
 
-  // Add destructor
-  ~MultiLoadingAnimation() {
-    Stop(); // Ensure thread is stopped and joined
-  }
+    std::atomic<bool> m_running;
+    std::thread m_animator;
+    ntl::Lock m_mutex;
+    ntl::Map<ntl::String, ntl::String> m_package_status;
+    ntl::Map<ntl::String, int> m_package_frames;
+    size_t m_last_line_count{0};
 
-  MultiLoadingAnimation(const MultiLoadingAnimation &) = delete;
+  public:
+    /**
+     * @brief Default constructor.
+     *
+     * Initializes the animation and starts it running.
+     */
+    MultiLoadingAnimation();
 
-  MultiLoadingAnimation &operator=(const MultiLoadingAnimation &) = delete;
+    /**
+     * @brief Destructor.
+     *
+     * Stops the animation and cleans up any resources used by the class.
+     */
+    ~MultiLoadingAnimation();
 
-  void ForceClean() {
-    for (size_t i = 0; i < m_last_line_count; ++i) {
-      std::cout << "\033[A";
-    }
+    /**
+     * @brief Delete copy constructor.
+     *
+     * This class is not designed to be copied or assigned.
+     */
+    MultiLoadingAnimation(const MultiLoadingAnimation&) = delete;
 
-    for (size_t i = 0; i < m_last_line_count; ++i) {
-      std::cout << "\r" << "\033[K";
-      if (i < m_last_line_count - 1) {
-        std::cout << "\n";
-      }
-    }
+    /**
+     * @brief Delete assignment operator.
+     *
+     * This class is not designed to be copied or assigned.
+     */
+    MultiLoadingAnimation& operator=(const MultiLoadingAnimation&) = delete;
 
-    std::cout.flush();
+    /**
+     * @brief Forces the animation to clean up and stop running.
+     */
+    void ForceClean();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    /**
+     * @brief Updates the status of a package in the animation.
+     *
+     * @param package_name The name of the package being updated.
+     * @param status The new status of the package.
+     */
+    void UpdateStatus(const ntl::String& package_name, const ntl::String& status);
 
-    m_last_line_count = 0;
-  }
+    /**
+     * @brief Removes a package from the animation.
+     *
+     * @param package_name The name of the package to remove.
+     */
+    void RemovePackage(const ntl::String& package_name);
 
-  void UpdateStatus(const ntl::String &package_name, const ntl::String &status) {
-    ntl::ScopeLock lock(&m_mutex);
-    m_package_status[package_name] = status;
-    m_package_frames[package_name] = 0;
-  }
+    /**
+     * @brief Stops the animation and clean up any resources used by the class.
+     */
+    void Stop();
 
-  void RemovePackage(const ntl::String &package_name) {
-    ntl::ScopeLock lock(&m_mutex);
-    m_package_status.Remove(package_name);
-    m_package_frames.Remove(package_name);
-    if (m_package_frames.GetSize() == 0 && m_package_status.GetSize() == 0) {
-      ForceClean();
-    }
-  }
-
-  void Stop() {
-    if (m_running) {
-      m_running = false;
-      if (m_animator.joinable()) {
-        m_animator.join();
-      }
-      ForceClean();
-      Console::GetInstance().PrintLine("");
-    }
-  }
-
-private:
-  static constexpr const char *DEFAULT_FRAMES[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
-  static constexpr int FRAME_DELAY_MS = 100;
-
-  std::atomic<bool> m_running;
-  std::thread m_animator;
-  ntl::Lock m_mutex;
-  ntl::Map<ntl::String, ntl::String> m_package_status;
-  ntl::Map<ntl::String, int> m_package_frames;
-  size_t m_last_line_count{0};
-
-  void animate() {
-    while (m_running) {
-      ntl::String status;
-      size_t current_line_count = 0; {
-        ntl::ScopeLock lock(&m_mutex);
-        for (const auto &[pkg, state]: m_package_status) {
-          status += ntl::String{CYAN} + pkg + ": " + YELLOW + state +
-              RESET + " " + DEFAULT_FRAMES[m_package_frames[pkg]] + "\n";
-          m_package_frames[pkg] = (m_package_frames[pkg] + 1) % std::size(DEFAULT_FRAMES);
-          current_line_count++;
-        }
-      }
-
-      for (size_t i = 0; i < m_last_line_count; ++i) {
-        std::cout << "\033[A" << "\033[2K";
-      }
-
-      if (!status.IsEmpty()) {
-        Console::GetInstance().UpdateProgress(status);
-      }
-
-      m_last_line_count = current_line_count;
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DELAY_MS));
-    }
-  }
-};
-
+  private:
+    /**
+     * @brief Animates the loading process.
+     *
+     * This function is responsible for displaying the loading animation on the console and updating the status of packages.
+     */
+    void animate();
+  };
+}
 
 #endif // ATLAS_MULTI_LOADING_ANIMATION_HPP
