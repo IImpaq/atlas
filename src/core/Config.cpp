@@ -49,28 +49,28 @@ namespace atlas {
 
   void Config::loadFromTable() {
     // Load core
-    if (const auto& core = m_config["core"]) {
-      if (const auto& verbose = core["verbose"].value<bool>())
+    if (const auto &core = m_config["core"]) {
+      if (const auto &verbose = core["verbose"].value<bool>())
         m_core.verbose = *verbose;
     }
 
     // Load paths
-    if (const auto& paths = m_config["paths"]) {
-      if (const auto& install = paths["install_dir"].value<std::string>())
+    if (const auto &paths = m_config["paths"]) {
+      if (const auto &install = paths["install_dir"].value<std::string>())
         m_paths.install_dir = expandPath(*install);
-      if (const auto& cache = paths["cache_dir"].value<std::string>())
+      if (const auto &cache = paths["cache_dir"].value<std::string>())
         m_paths.cache_dir = expandPath(*cache);
-      if (const auto& shortcuts = paths["shortcut_dir"].value<std::string>())
+      if (const auto &shortcuts = paths["shortcut_dir"].value<std::string>())
         m_paths.shortcut_dir = expandPath(*shortcuts);
     }
 
     // Load network settings
-    if (const auto& network = m_config["network"]) {
-      if (const auto& timeout = network["timeout"].value<int>())
+    if (const auto &network = m_config["network"]) {
+      if (const auto &timeout = network["timeout"].value<int>())
         m_network.timeout = *timeout;
-      if (const auto& retries = network["retries"].value<int>())
+      if (const auto &retries = network["retries"].value<int>())
         m_network.retries = *retries;
-      if (const auto& parallel = network["max_parallel_downloads"].value<int>())
+      if (const auto &parallel = network["max_parallel_downloads"].value<int>())
         m_network.max_parallel_downloads = *parallel;
     }
   }
@@ -81,7 +81,7 @@ namespace atlas {
       m_config.insert("core", toml::table{});
     }
 
-    auto& core = *m_config.get("core")->as_table();
+    auto &core = *m_config.get("core")->as_table();
     core.clear();
     core.insert("verbose", m_core.verbose);
 
@@ -89,7 +89,7 @@ namespace atlas {
     if (!m_config.contains("paths")) {
       m_config.insert("paths", toml::table{});
     }
-    auto& paths = *m_config.get("paths")->as_table();
+    auto &paths = *m_config.get("paths")->as_table();
     paths.clear();
     paths.insert("install_dir", compressPath(m_paths.install_dir));
     paths.insert("cache_dir", compressPath(m_paths.cache_dir));
@@ -99,7 +99,7 @@ namespace atlas {
     if (!m_config.contains("network")) {
       m_config.insert("network", toml::table{});
     }
-    auto& network = *m_config.get("network")->as_table();
+    auto &network = *m_config.get("network")->as_table();
     network.clear();
     network.insert("timeout", m_network.timeout);
     network.insert("retries", m_network.retries);
@@ -121,10 +121,10 @@ namespace atlas {
       try {
         m_config = toml::parse_file(m_config_path.string());
         loadFromTable();
-      } catch (const toml::parse_error& err) {
+      } catch (const toml::parse_error &err) {
         auto begin = err.source().begin;
         LOG_ERROR(ntl::String{"Error parsing config: "} + err.description().data() + "\n"
-                  + "Error at " + static_cast<int>(begin.line) + ":" + static_cast<int>(begin.column) + "\n");
+          + "Error at " + static_cast<int>(begin.line) + ":" + static_cast<int>(begin.column) + "\n");
         // Keep defaults on error
       }
     } else {
@@ -141,7 +141,7 @@ namespace atlas {
       std::ofstream file(m_config_path);
       file << m_config;
       return true;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
       LOG_ERROR(ntl::String{"Error saving config: "} + e.what() + "\n");
       return false;
     }
