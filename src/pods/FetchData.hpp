@@ -13,6 +13,10 @@
 #include "pods/PackageConfig.hpp"
 
 namespace atlas {
+  /**
+   * @struct FetchData
+   * A struct containing aggregated fetch results.
+   */
   struct FetchData {
     ntl::Array<ntl::String> successful_fetchs;
     ntl::Array<ntl::String> skipped_fetchs;

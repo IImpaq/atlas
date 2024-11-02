@@ -13,6 +13,11 @@
 #include "pods/PackageConfig.hpp"
 
 namespace atlas {
+  /**
+   * @struct InstallerData
+   *
+   * This struct holds the data required for installing a package.
+   */
   struct InstallerData {
     ntl::Array<PackageConfig> configs;
     ntl::Array<ntl::String> successful_installs;

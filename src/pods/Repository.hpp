@@ -11,11 +11,20 @@
 #include <data/Bool.hpp>
 #include <data/String.hpp>
 
-struct Repository {
+namespace atlas {
+  /**
+   * @struct Repository
+   *
+   * @brief This struct represents a repository, which can be thought of as a collection or container of data.
+   *
+   * A repository is typically used to manage and organize data in a way that's accessible and useful for the application.
+   */
+  struct Repository {
     ntl::String name;
     ntl::String url;
     ntl::String branch;
     bool enabled;
-};
+  };
+}
 
 #endif // ATLAS_REPOSITORY_HPP

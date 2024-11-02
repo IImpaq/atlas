@@ -11,7 +11,16 @@
 #include <data/Array.hpp>
 #include <data/String.hpp>
 
-struct PackageConfig {
+namespace atlas {
+  /**
+   * @struct PackageConfig
+   * @brief Configuration data for a package in the Atlas framework.
+   *
+   * This struct holds metadata about a package, such as its name, version,
+   * dependencies, and other relevant details. It is intended to be used by
+   * the Atlas package manager to manage and install packages.
+   */
+  struct PackageConfig {
     ntl::String name;
     ntl::String version;
     ntl::String description;
@@ -20,6 +29,7 @@ struct PackageConfig {
     ntl::String uninstall_command;
     ntl::String repository;
     ntl::Array<ntl::String> dependencies;
-};
+  };
+}
 
 #endif // ATLAS_PACKAGE_CONFIG_HPP
