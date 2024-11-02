@@ -16,12 +16,12 @@
 #include "utils/Misc.hpp"
 
 namespace atlas {
-  static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((ntl::String *) userp)->Append(static_cast<char *>(contents));
     return size * nmemb;
   }
 
-  Atlas::Atlas(const fs::path &a_install, const fs::path &a_cache, bool verbose)
+  Atlas::Atlas(const fs::path& a_install, const fs::path& a_cache, bool verbose)
     : m_config(), m_install_dir(m_config.GetPaths().install_dir), m_cache_dir(m_config.GetPaths().cache_dir),
       m_shortcut_dir(m_config.GetPaths().shortcut_dir), m_repo_config_path(m_install_dir / "repositories.json"),
       m_log_dir(m_install_dir / "logs"), m_repositories(), m_package_index() {
@@ -42,7 +42,7 @@ namespace atlas {
     JobSystem::Instance().Shutdown();
   }
 
-  bool Atlas::AddRepository(const ntl::String &a_name, const ntl::String &a_url, const ntl::String &a_branch) {
+  bool Atlas::AddRepository(const ntl::String& a_name, const ntl::String& a_url, const ntl::String& a_branch) {
     if (m_repositories.Find(a_name) != m_repositories.end()) {
       LOG_ERROR("Repository already exists");
       return false;
@@ -54,7 +54,7 @@ namespace atlas {
     return fetchRepository(repo);
   }
 
-  bool Atlas::RemoveRepository(const ntl::String &a_name) {
+  bool Atlas::RemoveRepository(const ntl::String& a_name) {
     if (m_repositories.Find(a_name) == m_repositories.end()) {
       LOG_ERROR("Repository not found");
       return false;
@@ -66,7 +66,7 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::EnableRepository(const ntl::String &a_name) {
+  bool Atlas::EnableRepository(const ntl::String& a_name) {
     if (m_repositories.Find(a_name) == m_repositories.end()) {
       LOG_ERROR("Repository '" + a_name + "' not found...");
       return false;
@@ -78,7 +78,7 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::DisableRepository(const ntl::String &a_name) {
+  bool Atlas::DisableRepository(const ntl::String& a_name) {
     if (m_repositories.Find(a_name) == m_repositories.end()) {
       LOG_ERROR("Repository '" + a_name + "' not found...");
       return false;
@@ -92,7 +92,7 @@ namespace atlas {
 
   void Atlas::ListRepositories() {
     LOG_MSG("Local repositories:");
-    for (const auto &[name, repo] : m_repositories) {
+    for (const auto& [name, repo] : m_repositories) {
       LOG_MSG(name + " (" + (repo.enabled ? "enabled" : "disabled") + ")\n"
         + "  URL: " + repo.url + "\n" + "  Branch: " + repo.branch);
     }
@@ -104,7 +104,7 @@ namespace atlas {
 
     // Schedule repository fetching jobs
     m_repositories_lock.StartRead();
-    for (const auto &[name, repo] : m_repositories) {
+    for (const auto& [name, repo] : m_repositories) {
       if (!repo.enabled) {
         continue;
       }
@@ -132,7 +132,7 @@ namespace atlas {
             }
 
             std::vector<PackageConfig> configs;
-            for (const auto &package : root["packages"]) {
+            for (const auto& package : root["packages"]) {
               PackageConfig config{
                 package["name"].asString().c_str(),
                 package["version"].asString().c_str(),
@@ -144,8 +144,8 @@ namespace atlas {
                 ntl::Array<ntl::String>()
               };
 
-              const Json::Value &deps = package["dependencies"];
-              for (const auto &dep : deps) {
+              const Json::Value& deps = package["dependencies"];
+              for (const auto& dep : deps) {
                 config.dependencies.Insert(dep.asString().c_str());
               }
               configs.push_back(config);
@@ -153,11 +153,11 @@ namespace atlas {
 
             // Add all configs at once to minimize lock time
             m_package_index_lock.StartWrite();
-            for (const auto &config : configs) {
+            for (const auto& config : configs) {
               m_package_index[config.name] = config;
             }
             m_package_index_lock.EndWrite();
-          } catch (const std::exception &e) {
+          } catch (const std::exception& e) {
             LOG_ERROR("Error parsing package index for " + name + ": " + e.what());
             m_fetch_data_lock.StartWrite();
             m_fetch_data.failed_fetchs.Insert(name);
@@ -182,10 +182,10 @@ namespace atlas {
   }
 
 
-  bool Atlas::Install(const ntl::Array<ntl::String> &a_package_names) {
+  bool Atlas::Install(const ntl::Array<ntl::String>& a_package_names) {
     // Validate all packages exist first
     m_installer_data_lock.StartWrite();
-    for (const auto &name : a_package_names) {
+    for (const auto& name : a_package_names) {
       if (m_package_index.Find(name) == m_package_index.end()) {
         LOG_ERROR("Package not found: " + name);
         m_installer_data_lock.EndWrite();
@@ -196,7 +196,7 @@ namespace atlas {
     m_installer_data_lock.EndWrite();
 
     // Helper function to schedule package and its dependencies
-    std::function<void(const PackageConfig &)> schedulePackage = [&](const PackageConfig &config) {
+    std::function<void(const PackageConfig&)> schedulePackage = [&](const PackageConfig& config) {
       m_installer_data_lock.StartRead();
       if (m_installer_data.scheduled[config.name] || !m_installer_data.failed_installs.IsEmpty()) {
         m_installer_data_lock.EndRead();
@@ -209,7 +209,7 @@ namespace atlas {
 
       // First schedule all dependencies
       m_package_index_lock.StartRead();
-      for (const auto &dep : config.dependencies) {
+      for (const auto& dep : config.dependencies) {
         if (m_package_index.Find(dep) == m_package_index.end()) {
           m_package_index_lock.EndRead();
           m_installer_data_lock.StartWrite();
@@ -275,7 +275,7 @@ namespace atlas {
     };
 
     // Schedule all packages and their dependencies
-    for (const auto &config : m_installer_data.configs) {
+    for (const auto& config : m_installer_data.configs) {
       schedulePackage(config);
     }
 
@@ -284,7 +284,7 @@ namespace atlas {
     return result;
   }
 
-  bool Atlas::Install(const ntl::String &a_package_name) {
+  bool Atlas::Install(const ntl::String& a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
       LOG_ERROR("Package not found");
       return false;
@@ -292,7 +292,7 @@ namespace atlas {
     return Install({a_package_name});
   }
 
-  bool Atlas::Remove(const ntl::String &a_package_name) {
+  bool Atlas::Remove(const ntl::String& a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
       LOG_ERROR("Package not found");
       return false;
@@ -310,13 +310,13 @@ namespace atlas {
     }
 
     m_installer_data_lock.StartWrite();
-    for (const auto &[name, config] : m_package_index) {
+    for (const auto& [name, config] : m_package_index) {
       m_installer_data.configs.Insert(config);
     }
     m_installer_data_lock.EndWrite();
 
     // Helper function to schedule package update
-    std::function<void(const PackageConfig &)> scheduleUpdate = [&](const PackageConfig &config) {
+    std::function<void(const PackageConfig&)> scheduleUpdate = [&](const PackageConfig& config) {
       m_installer_data_lock.StartRead();
       if (m_installer_data.scheduled[config.name] || !m_installer_data.failed_installs.IsEmpty()) {
         m_installer_data_lock.EndRead();
@@ -384,7 +384,7 @@ namespace atlas {
     };
 
     // Schedule updates for all packages
-    for (const auto &config : m_installer_data.configs) {
+    for (const auto& config : m_installer_data.configs) {
       scheduleUpdate(config);
     }
 
@@ -402,7 +402,7 @@ namespace atlas {
     return success;
   }
 
-  bool Atlas::Upgrade(const ntl::String &a_package_name) {
+  bool Atlas::Upgrade(const ntl::String& a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
       LOG_ERROR("Package not found");
       return false;
@@ -411,7 +411,7 @@ namespace atlas {
     return upgrade(m_package_index[a_package_name]);
   }
 
-  bool Atlas::LockPackage(const ntl::String &name) {
+  bool Atlas::LockPackage(const ntl::String& name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -433,7 +433,7 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::UnlockPackage(const ntl::String &name) {
+  bool Atlas::UnlockPackage(const ntl::String& name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -454,7 +454,7 @@ namespace atlas {
     cleanupPackages();
   }
 
-  bool Atlas::KeepPackage(const ntl::String &name) {
+  bool Atlas::KeepPackage(const ntl::String& name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -475,7 +475,7 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::UnkeepPackage(const ntl::String &name) {
+  bool Atlas::UnkeepPackage(const ntl::String& name) {
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
 
@@ -491,10 +491,10 @@ namespace atlas {
     return true;
   }
 
-  std::vector<ntl::String> Atlas::Search(const ntl::String &a_query) {
+  std::vector<ntl::String> Atlas::Search(const ntl::String& a_query) {
     std::vector<ntl::String> results;
     std::string str;
-    for (const auto &[name, config] : m_package_index) {
+    for (const auto& [name, config] : m_package_index) {
       if (name.Find(a_query) != -1 || config.description.Find(a_query) != -1) {
         results.push_back(name);
       }
@@ -502,13 +502,13 @@ namespace atlas {
     return results;
   }
 
-  void Atlas::Info(const ntl::String &a_package_name) {
+  void Atlas::Info(const ntl::String& a_package_name) {
     if (m_package_index.Find(a_package_name) == m_package_index.end()) {
       LOG_ERROR("Package not found");
       return;
     }
 
-    const auto &config = m_package_index[a_package_name];
+    const auto& config = m_package_index[a_package_name];
     LOG_MSG("Name: " + config.name + "\n"
       + "Version: " + config.version + "\n"
       + "Description: " + config.description + "\n"
@@ -517,7 +517,7 @@ namespace atlas {
     );
   }
 
-  bool Atlas::IsInstalled(const ntl::String &a_package_name) const {
+  bool Atlas::IsInstalled(const ntl::String& a_package_name) const {
     fs::path dbPath = m_install_dir / "installed.json";
     if (!fs::exists(dbPath)) {
       return false;
@@ -579,7 +579,7 @@ namespace atlas {
 
       LOG_INFO("Installation complete. Please restart your terminal or run 'source ~/.bashrc' (or ~/.zshrc)");
       return true;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       LOG_ERROR("Installation failed: " + ntl::String(e.what()));
       return false;
     }
@@ -596,7 +596,7 @@ namespace atlas {
         return true;
       }
       return false;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       LOG_ERROR("Uninstallation failed: " + ntl::String(e.what()));
       return false;
     }
@@ -612,7 +612,7 @@ namespace atlas {
     std::ifstream config_file(m_repo_config_path);
     config_file >> root;
 
-    for (const auto &repo : root["repositories"]) {
+    for (const auto& repo : root["repositories"]) {
       Repository r{
         repo["name"].asString().c_str(), repo["url"].asString().c_str(),
         repo["branch"].asString().c_str(), repo["enabled"].asBool()
@@ -625,7 +625,7 @@ namespace atlas {
     Json::Value root;
     Json::Value repoArray(Json::arrayValue);
 
-    for (const auto &[name, repo] : m_repositories) {
+    for (const auto& [name, repo] : m_repositories) {
       Json::Value repoObj;
       repoObj["name"] = repo.name.GetCString();
       repoObj["url"] = repo.url.GetCString();
@@ -641,12 +641,12 @@ namespace atlas {
 
   void Atlas::loadPackageIndex() {
     m_package_index.Clear();
-    for (const auto &[name, repo] : m_repositories) {
+    for (const auto& [name, repo] : m_repositories) {
       if (!repo.enabled)
         continue;
 
       fs::path repoPath = m_cache_dir / name.GetCString();
-      for (const auto &entry : fs::recursive_directory_iterator(repoPath)) {
+      for (const auto& entry : fs::recursive_directory_iterator(repoPath)) {
         if (entry.path().filename() == "package.json") {
           Json::Value root;
           std::ifstream config_file(entry.path());
@@ -668,11 +668,11 @@ namespace atlas {
     }
   }
 
-  bool Atlas::fetchRepository(const Repository &a_repo) const {
+  bool Atlas::fetchRepository(const Repository& a_repo) const {
     fs::path repoPath = m_cache_dir / a_repo.name.GetCString();
     fs::path zipPath = m_cache_dir / (a_repo.name + ".zip").GetCString();
 
-    CURL *curl = curl_easy_init();
+    CURL* curl = curl_easy_init();
     if (!curl) {
       LOG_ERROR("Failed to initialize CURL");
       return false;
@@ -680,14 +680,14 @@ namespace atlas {
 
     ntl::String url =
         "https://api.github.com/repos/" + a_repo.url + "/zipball/" + a_repo.branch;
-    FILE *fp = fopen(zipPath.string().c_str(), "wb");
+    FILE* fp = fopen(zipPath.string().c_str(), "wb");
     if (!fp) {
       curl_easy_cleanup(curl);
       LOG_ERROR("Failed to create zip file");
       return false;
     }
 
-    struct curl_slist *headers = nullptr;
+    struct curl_slist* headers = nullptr;
     headers = curl_slist_append(headers, "Accept: application/vnd.github+json");
     headers = curl_slist_append(headers, "User-Agent: Atlas-Package-Manager");
 
@@ -723,7 +723,7 @@ namespace atlas {
     }
 
     fs::path nested_dir;
-    for (const auto &entry : fs::directory_iterator(repoPath)) {
+    for (const auto& entry : fs::directory_iterator(repoPath)) {
       if (fs::is_directory(entry)) {
         nested_dir = entry.path();
         break;
@@ -731,7 +731,7 @@ namespace atlas {
     }
 
     if (!nested_dir.empty()) {
-      for (const auto &entry : fs::directory_iterator(nested_dir)) {
+      for (const auto& entry : fs::directory_iterator(nested_dir)) {
         fs::rename(entry.path(), repoPath / entry.path().filename());
       }
       fs::remove_all(nested_dir);
@@ -740,7 +740,7 @@ namespace atlas {
     return true;
   }
 
-  bool Atlas::removePackage(const PackageConfig &a_config) {
+  bool Atlas::removePackage(const PackageConfig& a_config) {
     PackageInstaller installer(m_cache_dir, m_install_dir, m_log_dir, a_config);
 
     bool success = installer.Uninstall();
@@ -753,7 +753,7 @@ namespace atlas {
     return true;
   }
 
-  void Atlas::recordInstallation(const PackageConfig &a_config) {
+  void Atlas::recordInstallation(const PackageConfig& a_config) {
     Json::Value root;
     fs::path db_path = m_install_dir / "installed.json";
 
@@ -775,7 +775,7 @@ namespace atlas {
     db_file << root;
   }
 
-  void Atlas::recordRemoval(const PackageConfig &a_config) {
+  void Atlas::recordRemoval(const PackageConfig& a_config) {
     Json::Value root;
     fs::path db_path = m_install_dir / "installed.json";
 
@@ -790,7 +790,7 @@ namespace atlas {
     db_file << root;
   }
 
-  bool Atlas::upgrade(const PackageConfig &a_config) {
+  bool Atlas::upgrade(const PackageConfig& a_config) {
     bool success = true;
     fs::path dbPath = m_install_dir / "installed.json";
     Json::Value root;
@@ -848,15 +848,15 @@ namespace atlas {
 
     // Create a set of all dependencies
     std::set<ntl::String> allDependencies;
-    for (const auto &packageName : root.getMemberNames()) {
-      const auto &deps = root[packageName]["dependencies"];
-      for (const auto &dep : deps) {
+    for (const auto& packageName : root.getMemberNames()) {
+      const auto& deps = root[packageName]["dependencies"];
+      for (const auto& dep : deps) {
         allDependencies.insert(dep.asString().c_str());
       }
     }
 
     // Check each installed package
-    for (const auto &packageName : root.getMemberNames()) {
+    for (const auto& packageName : root.getMemberNames()) {
       // Skip if package is a dependency of another package
       if (allDependencies.contains(packageName.c_str())) {
         continue;

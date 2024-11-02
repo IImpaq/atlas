@@ -14,18 +14,34 @@
 namespace fs = std::filesystem;
 
 namespace atlas {
+  /**
+   * @class Config
+   * @brief Configuration class for Atlas application.
+   */
   class Config {
   public:
+    /**
+     * @struct Core
+     * @brief Core configuration structure.
+     */
     struct Core {
       bool verbose;
     };
 
+    /**
+     * @struct Paths
+     * @brief Path-related configuration structure.
+     */
     struct Paths {
       fs::path install_dir;
       fs::path cache_dir;
       fs::path shortcut_dir;
     };
 
+    /**
+     * @struct Network
+     * @brief Network configuration structure.
+     */
     struct Network {
       int timeout;
       int retries;
@@ -50,7 +66,7 @@ namespace atlas {
      *
      * @param a_config_path The absolute path to the TOML file containing the configuration.
      */
-    explicit Config(const fs::path &a_config_path);
+    explicit Config(const fs::path& a_config_path);
 
     /**
      * @brief Loads configuration from the default or explicitly specified location.
@@ -63,7 +79,7 @@ namespace atlas {
     /**
      * @brief Saves current configuration to a TOML file.
      *
-     * Returns true if successful, false otherwise.
+     * @return Returns true if successful, false otherwise.
      */
     bool Save();
 
@@ -73,21 +89,21 @@ namespace atlas {
      *
      * @return The core configuration struct.
      */
-    const Core &GetCore() const { return m_core; }
+    const Core& GetCore() const { return m_core; }
 
     /**
      * @brief Returns the paths configuration struct.
      *
      * @return The paths configuration struct.
      */
-    const Paths &GetPaths() const { return m_paths; }
+    const Paths& GetPaths() const { return m_paths; }
 
     /**
      * @brief Returns the network configuration struct.
      *
      * @return The network configuration struct.
      */
-    const Network &GetNetwork() const { return m_network; }
+    const Network& GetNetwork() const { return m_network; }
 
     // Core setters
     /**
@@ -103,21 +119,21 @@ namespace atlas {
      *
      * @param a_path The absolute path to the new installation directory.
      */
-    void SetInstallDir(const fs::path &a_path);
+    void SetInstallDir(const fs::path& a_path);
 
     /**
      * @brief Sets the cache directory to the specified path.
      *
      * @param a_path The absolute path to the new cache directory.
      */
-    void SetCacheDir(const fs::path &a_path);
+    void SetCacheDir(const fs::path& a_path);
 
     /**
      * @brief Sets the shortcut directory to the specified path.
      *
      * @param a_path The absolute path to the new shortcut directory.
      */
-    void SetShortcutDir(const fs::path &a_path);
+    void SetShortcutDir(const fs::path& a_path);
 
     // Network setters
     /**
@@ -149,7 +165,7 @@ namespace atlas {
      *
      * @return The expanded absolute path.
      */
-    static fs::path expandPath(const std::string &a_path);
+    static fs::path expandPath(const std::string& a_path);
 
     /**
      * @brief Compresses an absolute path into a compact string representation.
@@ -158,7 +174,7 @@ namespace atlas {
      *
      * @return The compressed path as a string.
      */
-    static std::string compressPath(const fs::path &a_path);
+    static std::string compressPath(const fs::path& a_path);
 
     /**
      * @brief Sets default values for all configuration members.

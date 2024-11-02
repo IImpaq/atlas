@@ -49,18 +49,17 @@ namespace atlas {
 
     MultiLoadingAnimation m_animator;
 
-    ntl::Map<ntl::String, Repository>     m_repositories;
-    ntl::SharedLock                       m_repositories_lock;
+    ntl::Map<ntl::String, Repository> m_repositories;
+    ntl::SharedLock m_repositories_lock;
 
-    ntl::Map<ntl::String, PackageConfig>  m_package_index;
-    ntl::SharedLock                       m_package_index_lock;
+    ntl::Map<ntl::String, PackageConfig> m_package_index;
+    ntl::SharedLock m_package_index_lock;
 
-    FetchData       m_fetch_data;
+    FetchData m_fetch_data;
     ntl::SharedLock m_fetch_data_lock;
 
-    InstallerData   m_installer_data;
+    InstallerData m_installer_data;
     ntl::SharedLock m_installer_data_lock;
-
 
   public:
     /**
@@ -73,7 +72,7 @@ namespace atlas {
      * @param a_cache Cache directory path
      * @param a_verbose Whether to enable verbose mode (default: false)
      */
-    Atlas(const fs::path &a_install, const fs::path &a_cache, bool a_verbose);
+    Atlas(const fs::path& a_install, const fs::path& a_cache, bool a_verbose);
 
     /**
      * @brief Destructor for the Atlas class.
@@ -90,7 +89,7 @@ namespace atlas {
      * @param a_branch Branch of the repository (default: "main")
      * @return Whether the operation was successful
      */
-    bool AddRepository(const ntl::String &a_name, const ntl::String &a_url, const ntl::String &a_branch = "main");
+    bool AddRepository(const ntl::String& a_name, const ntl::String& a_url, const ntl::String& a_branch = "main");
 
     /**
      * @brief Removes a repository from the atlas package manager.
@@ -100,7 +99,7 @@ namespace atlas {
      * @param a_name Name of the repository to remove
      * @return Whether the operation was successful
      */
-    bool RemoveRepository(const ntl::String &a_name);
+    bool RemoveRepository(const ntl::String& a_name);
 
     /**
      * @brief Enables or disables a repository in the atlas package manager.
@@ -110,7 +109,7 @@ namespace atlas {
      * @param a_name Name of the repository to enable/disable
      * @return Whether the operation was successful
      */
-    bool EnableRepository(const ntl::String &a_name);
+    bool EnableRepository(const ntl::String& a_name);
 
     /**
      * @brief Disables a repository in the atlas package manager.
@@ -120,7 +119,7 @@ namespace atlas {
      * @param a_name Name of the repository to disable
      * @return Whether the operation was successful
      */
-    bool DisableRepository(const ntl::String &a_name);
+    bool DisableRepository(const ntl::String& a_name);
 
     /**
      * @brief Lists all available repositories in the atlas package manager.
@@ -144,7 +143,7 @@ namespace atlas {
      * @param a_package_names Array of package names to install
      * @return Whether the operation was successful
      */
-    bool Install(const ntl::Array<ntl::String> &a_package_names);
+    bool Install(const ntl::Array<ntl::String>& a_package_names);
 
     /**
      * @brief Installs one package using the atlas package manager.
@@ -154,7 +153,7 @@ namespace atlas {
      * @param a_package_name Name of the package to install
      * @return Whether the operation was successful
      */
-    bool Install(const ntl::String &a_package_name);
+    bool Install(const ntl::String& a_package_name);
 
     /**
      * @brief Removes one or more packages from the atlas package manager.
@@ -164,7 +163,7 @@ namespace atlas {
      * @param a_package_name Name of the package to remove
      * @return Whether the operation was successful
      */
-    bool Remove(const ntl::String &a_package_name);
+    bool Remove(const ntl::String& a_package_name);
 
     /**
      * @brief Updates all installed packages in the atlas package manager.
@@ -183,7 +182,7 @@ namespace atlas {
      * @param a_package_name Name of the package to upgrade
      * @return Whether the operation was successful
      */
-    bool Upgrade(const ntl::String &a_package_name);
+    bool Upgrade(const ntl::String& a_package_name);
 
     /**
      * @brief Locks one or more packages in the atlas package manager.
@@ -193,7 +192,7 @@ namespace atlas {
      * @param a_package_name Name of the package to lock
      * @return Whether the operation was successful
      */
-    bool LockPackage(const ntl::String &name);
+    bool LockPackage(const ntl::String& name);
 
     /**
      * @brief Unlocks one or more packages in the atlas package manager.
@@ -203,7 +202,7 @@ namespace atlas {
      * @param a_package_name Name of the package to unlock
      * @return Whether the operation was successful
      */
-    bool UnlockPackage(const ntl::String &name);
+    bool UnlockPackage(const ntl::String& name);
 
     /**
      * @brief Cleans up any temporary files or data created during an installation process.
@@ -218,7 +217,7 @@ namespace atlas {
      * @param a_package_name Name of the package to keep
      * @return Whether the operation was successful
      */
-    bool KeepPackage(const ntl::String &name);
+    bool KeepPackage(const ntl::String& name);
 
     /**
      * @brief Unkeeps one or more packages in the atlas package manager.
@@ -228,7 +227,7 @@ namespace atlas {
      * @param a_package_name Name of the package to unkeep
      * @return Whether the operation was successful
      */
-    bool UnkeepPackage(const ntl::String &name);
+    bool UnkeepPackage(const ntl::String& name);
 
     /**
      * @brief Searches for packages matching a specific query in the atlas package manager.
@@ -238,7 +237,7 @@ namespace atlas {
      * @param a_query Search query
      * @return List of matching package names
      */
-    std::vector<ntl::String> Search(const ntl::String &a_query);
+    std::vector<ntl::String> Search(const ntl::String& a_query);
 
     /**
      * @brief Displays information about one or more packages in the atlas package manager.
@@ -247,7 +246,7 @@ namespace atlas {
      *
      * @param a_package_name Name of the package to display info for
      */
-    void Info(const ntl::String &a_package_name);
+    void Info(const ntl::String& a_package_name);
 
     /**
      * @brief Checks whether one or more packages are installed in the atlas package manager.
@@ -257,7 +256,7 @@ namespace atlas {
      * @param a_package_name Name of the package to check
      * @return Whether the package is installed (default: false)
      */
-    bool IsInstalled(const ntl::String &a_package_name) const;
+    bool IsInstalled(const ntl::String& a_package_name) const;
 
     /**
      * @brief Configures and initializes the atlas package manager for first-time use.
@@ -299,7 +298,7 @@ namespace atlas {
      * @param a_repo Repository to fetch from
      * @return Whether the operation was successful
      */
-    bool fetchRepository(const Repository &a_repo) const;
+    bool fetchRepository(const Repository& a_repo) const;
 
     /**
      * @brief Removes one or more packages from the atlas package manager by updating the package index.
@@ -307,21 +306,21 @@ namespace atlas {
      * @param a_config Package configuration to remove
      * @return Whether the operation was successful
      */
-    bool removePackage(const PackageConfig &a_config);
+    bool removePackage(const PackageConfig& a_config);
 
     /**
      * @brief Records an installation event for one or more packages in the package index.
      *
      * @param a_config Package configuration to record
      */
-    void recordInstallation(const PackageConfig &a_config);
+    void recordInstallation(const PackageConfig& a_config);
 
     /**
      * @brief Records a removal event for one or more packages in the package index.
      *
      * @param a_config Package configuration to record
      */
-    void recordRemoval(const PackageConfig &a_config);
+    void recordRemoval(const PackageConfig& a_config);
 
     /**
      * @brief Upgrades one or more packages using the PackageInstaller class.
@@ -329,7 +328,7 @@ namespace atlas {
      * @param a_config Package configuration to upgrade
      * @return Whether the operation was successful
      */
-    bool upgrade(const PackageConfig &a_config);
+    bool upgrade(const PackageConfig& a_config);
 
     /**
      * @brief Returns the current date and time as a string.

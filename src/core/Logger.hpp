@@ -63,6 +63,7 @@ namespace atlas {
      * @brief Deletes Copy Constructor.
      */
     Logger(const Logger&) = delete;
+
     /**
      * @brief Deletes copy assignment operator.
      * @return the reference to the current logger object
@@ -73,6 +74,7 @@ namespace atlas {
      * @brief Initializes the logger.
      */
     void Initialize();
+
     /**
      * @brief Shuts down the logger (makes it unusable until initialized again).
      */
@@ -83,26 +85,31 @@ namespace atlas {
      * @param a_message a log message
      */
     void Msg(const ntl::String& a_message);
+
     /**
      * @brief Logs a debug message on a given channel.
      * @param a_message a log message
      */
     void Debug(const ntl::String& a_message);
+
     /**
      * @brief Logs a info message on a given channel.
      * @param a_message a log message
      */
     void Info(const ntl::String& a_message);
+
     /**
      * @brief Logs a warning message on a given channel.
      * @param a_message a log message
      */
     void Warn(const ntl::String& a_message);
+
     /**
      * @brief Logs a error message on a given channel.
      * @param a_message a log message
      */
-    void Error( const ntl::String& a_message);
+    void Error(const ntl::String& a_message);
+
     /**
      * @brief Logs a fatal message on a given channel.
      * @param a_message a log message
@@ -114,6 +121,7 @@ namespace atlas {
      * @param a_verbosity a minimum verbosity
      */
     void SetMinVerbosity(Verbosity a_verbosity);
+
     /**
      * @brief Sets the threshold of number of logs when the buffer will be flushed.
      * @param a_threshold the threshold when to flush the buffer
@@ -124,6 +132,7 @@ namespace atlas {
      * @brief Gets the minimum verbosity to log.
      */
     Verbosity GetMinVerbosity();
+
     /**
      * @brief Gets the current threshold of number of logs when the buffer will be flushed.
      */
@@ -134,6 +143,7 @@ namespace atlas {
      * @brief Default Constructor
      */
     Logger();
+
     /**
      * @brief Default Destructor
      */
@@ -145,16 +155,19 @@ namespace atlas {
      * @param a_message a message to log
      */
     void log(Verbosity a_verbosity, const ntl::String& a_message);
+
     /**
      * @brief Force the buffer to be flushed wheb the given threshold is reached.
      */
     void forceFlushBuffer();
+
     /**
      * @brief Inserts the next log to the buffer and flushed when the given threshold is reached.
      * @param a_log the log to insert
      * @param a_threshold the threshold to check for
      */
     void flushBuffer(const ntl::String& a_log, ntl::Size a_threshold);
+
     /**
      * @brief Gets the string prefix for a given verbosity enum.
      * @param a_verbosity a log verbosity

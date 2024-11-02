@@ -101,12 +101,13 @@ namespace atlas {
   Logger::Logger()
     : m_min_verbosity{DEFAULT_MIN_VERBOSITY}, m_buffer_threshold{DEFAULT_BUFFER_THRESHOLD},
       m_configuration_lock{}, m_logs{1024, false}, m_logs_lock{},
-      m_file{DEFAULT_PATH}, m_initialized{false} {}
+      m_file{DEFAULT_PATH}, m_initialized{false} {
+  }
 
   void Logger::log(Verbosity a_verbosity, const ntl::String& a_message) {
     m_configuration_lock.StartRead();
 
-    if(a_verbosity < m_min_verbosity) {
+    if (a_verbosity < m_min_verbosity) {
       m_configuration_lock.EndRead();
       return;
     }
@@ -131,7 +132,7 @@ namespace atlas {
   void Logger::flushBuffer(const ntl::String& a_log, ntl::Size a_threshold) {
     ntl::ScopeLock lock(&m_logs_lock);
     m_logs.Insert(a_log);
-    if(m_logs.GetSize() > a_threshold) {
+    if (m_logs.GetSize() > a_threshold) {
       m_file.WriteFile(m_logs);
       m_logs.Clear();
     }
@@ -140,41 +141,41 @@ namespace atlas {
   ntl::String Logger::getVerbosityPrefix(Verbosity a_verbosity) {
     ntl::String prefix = "";
 
-    switch(a_verbosity) {
-    case Verbosity::MSG:
-      break;
-    case Verbosity::DEBUG:
-      prefix = BLUE + ntl::String{"› Debug: "} + RESET;
+    switch (a_verbosity) {
+      case Verbosity::MSG:
+        break;
+      case Verbosity::DEBUG:
+        prefix = BLUE + ntl::String{"› Debug: "} + RESET;
       // prefix = BLUE + ntl::String{"🔍 Debug: "} + RESET;
       //     prefix = BLUE + "[-] Debug → " + RESET;
       //     prefix = BLUE + "› " + RESET;
-      break;
-    case Verbosity::INFO:
-      prefix = GREEN + ntl::String{"✓️ Info: "} + RESET;
+        break;
+      case Verbosity::INFO:
+        prefix = GREEN + ntl::String{"✓️ Info: "} + RESET;
       // prefix = GREEN + ntl::String{"✔️ Info: "} + RESET;
       // prefix = GREEN + ntl::String{"ℹ️ Info: "} + RESET;
       //     prefix = GREEN + "[+] Info → " + RESET;
       //     prefix = GREEN + "• " + RESET;
-      break;
-    case Verbosity::WARN:
-      prefix = YELLOW + ntl::String{"⚡️ Warning: "} + RESET;
+        break;
+      case Verbosity::WARN:
+        prefix = YELLOW + ntl::String{"⚡️ Warning: "} + RESET;
       // prefix = YELLOW + ntl::String{"⚠️ Warning: "} + RESET;
       //     prefix = YELLOW + "[!] Warning → " + RESET;
       //     prefix = YELLOW + "⚡ " + RESET;
-      break;
-    case Verbosity::ERROR:
-      prefix = RED + ntl::String{"✕ Error: "} + RESET;
+        break;
+      case Verbosity::ERROR:
+        prefix = RED + ntl::String{"✕ Error: "} + RESET;
       // prefix = RED + ntl::String{"❌ Error: "} + RESET;
       //     prefix = RED + "[✗] Error → " + RESET;
       //     prefix = RED + "✕ " + RESET;
       // ✘ Error:
-      break;
-    case Verbosity::FATAL:
-      prefix = MAGENTA + ntl::String{"☠ Fatal: "} + RESET;
+        break;
+      case Verbosity::FATAL:
+        prefix = MAGENTA + ntl::String{"☠ Fatal: "} + RESET;
       // prefix = MAGENTA + ntl::String{"💥 FATAL: "} + RESET;
       //     prefix = MAGENTA + "[☠] FATAL → " + RESET;
       // prefix = MAGENTA + "⬢ " + RESET;
-      break;
+        break;
     }
 
     return prefix;

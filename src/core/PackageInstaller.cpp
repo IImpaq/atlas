@@ -12,13 +12,15 @@
 #include "utils/Misc.hpp"
 
 namespace atlas {
-  PackageInstaller::PackageInstaller(const fs::path &a_cache, const fs::path &a_install, const fs::path &a_log,
-    const PackageConfig &a_package_config): m_cache_dir(a_cache), m_install_dir(a_install), m_log_dir(a_log) {
-  #ifdef __APPLE__
+  PackageInstaller::PackageInstaller(const fs::path& a_cache, const fs::path& a_install, const fs::path& a_log,
+                                     const PackageConfig& a_package_config): m_cache_dir(a_cache),
+                                                                             m_install_dir(a_install),
+                                                                             m_log_dir(a_log) {
+#ifdef __APPLE__
     m_platform = "macos";
-  #else
+#else
           platform = "linux";
-  #endif
+#endif
 
     // Load package.json from the package's directory
     fs::path packageJsonPath = m_cache_dir / a_package_config.repository.GetCString() /
@@ -30,7 +32,7 @@ namespace atlas {
   }
 
   bool PackageInstaller::Download() {
-    const auto &step = m_config["platforms"][m_platform.GetCString()]["steps"]["download"];
+    const auto& step = m_config["platforms"][m_platform.GetCString()]["steps"]["download"];
     return downloadFile(step["url"].asString().c_str(), step["target"].asString().c_str());
   }
 
@@ -59,8 +61,8 @@ namespace atlas {
       m_config["platforms"][m_platform.GetCString()]["steps"]["uninstall"]["commands"]);
   }
 
-  bool PackageInstaller::executeCommands(const Json::Value &a_commands) {
-    for (const auto &cmd : a_commands) {
+  bool PackageInstaller::executeCommands(const Json::Value& a_commands) {
+    for (const auto& cmd : a_commands) {
       ntl::String command = replaceVariables(cmd.asString().c_str());
       if (ProcessCommand(command, ntl::String{(m_log_dir / "latest.log").c_str()}, false) != 0) {
         return false;
@@ -69,20 +71,20 @@ namespace atlas {
     return true;
   }
 
-  ntl::String PackageInstaller::replaceVariables(const ntl::String &a_cmd) {
+  ntl::String PackageInstaller::replaceVariables(const ntl::String& a_cmd) {
     ntl::String result = a_cmd;
     result = std::regex_replace(result.GetCString(), std::regex("\\$PACKAGE_CACHE_DIR"), m_cache_dir.string()).c_str();
     result = std::regex_replace(result.GetCString(), std::regex("\\$INSTALL_DIR"), m_install_dir.string()).c_str();
     return result;
   }
 
-  bool PackageInstaller::downloadFile(const ntl::String &a_url, const ntl::String &a_target) {
+  bool PackageInstaller::downloadFile(const ntl::String& a_url, const ntl::String& a_target) {
     ntl::String targetPath = replaceVariables(a_target);
-    CURL *curl = curl_easy_init();
+    CURL* curl = curl_easy_init();
     if (!curl)
       return false;
 
-    FILE *fp = fopen(targetPath.GetCString(), "wb");
+    FILE* fp = fopen(targetPath.GetCString(), "wb");
     if (!fp) {
       curl_easy_cleanup(curl);
       return false;
