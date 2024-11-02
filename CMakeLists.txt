@@ -23,6 +23,8 @@ find_package(CURL CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+find_package(Z3 CONFIG REQUIRED)
+
 pkg_check_modules(tomlplusplus REQUIRED IMPORTED_TARGET tomlplusplus)
 
 add_subdirectory(libs/NTL/ntl/)
@@ -32,5 +34,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         CURL::libcurl
         JsonCpp::JsonCpp
         PkgConfig::tomlplusplus
+        z3::libz3
         ntl
 )
