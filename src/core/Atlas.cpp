@@ -836,41 +836,6 @@ namespace atlas {
 #endif
   }
 
-  bool Atlas::downloadRepository(const ntl::String &a_username, const ntl::String &a_repo) const {
-    CURL *curl = curl_easy_init();
-    ntl::String url = "https://api.github.com/repos/" + a_username + "/" + a_repo +
-                      "/zipball/master";
-    ntl::String zipPath = (m_cache_dir / (a_repo + ".zip").GetCString()).string().c_str();
-
-    if (!curl)
-      return false;
-
-    FILE *fp = fopen(zipPath.GetCString(), "wb");
-    struct curl_slist *headers = nullptr;
-    headers = curl_slist_append(headers, "Accept: application/vnd.github+json");
-    headers = curl_slist_append(headers, "User-Agent: Atlas-Package-Manager");
-
-    curl_easy_setopt(curl, CURLOPT_URL, url.GetCString());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, nullptr);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    CURLcode res = curl_easy_perform(curl);
-    fclose(fp);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    return res == CURLE_OK;
-  }
-
-  bool Atlas::extractPackage(const ntl::String &a_repo) const {
-    ntl::String zipPath = (m_cache_dir / (a_repo + ".zip").GetCString()).c_str();
-    ntl::String extractPath = (m_install_dir / a_repo.GetCString()).c_str();
-    ntl::String cmd = "unzip -o " + zipPath + " -d " + extractPath;
-    return system(cmd.GetCString()) == 0;
-  }
-
   void Atlas::cleanupPackages() {
     fs::path dbPath = m_install_dir / "installed.json";
     if (!fs::exists(dbPath)) {
